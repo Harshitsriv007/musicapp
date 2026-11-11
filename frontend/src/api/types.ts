@@ -33,6 +33,13 @@ export interface Folder {
   imageUrl: string | null;
 }
 
+export interface SearchResult {
+  query: string;
+  songs: Song[];
+  artists: Folder[];
+  movies: Folder[];
+}
+
 export interface SongQuery {
   downloaded?: boolean;
   /** 'latest' or a decade start year such as '1990' */

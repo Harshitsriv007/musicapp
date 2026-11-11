@@ -94,6 +94,21 @@ export async function fakeBackend(page: Page, initial: FakeSong[]) {
         .filter((s) => !movie || s.movie === movie)
         .map(view)));
     }
+    if (method === 'GET' && path === '/api/search') {
+      const q = (url.searchParams.get('q') ?? '').trim().toLowerCase();
+      const has = (v: string | null) => !!v && v.toLowerCase().includes(q);
+      const folders = (pick: (s: FakeSong) => string | null) => {
+        const counts = new Map<string, number>();
+        songs.forEach((s) => { const k = pick(s); if (has(k)) counts.set(k!, (counts.get(k!) ?? 0) + 1); });
+        return [...counts].map(([key, songCount]) => ({ key, title: key, songCount, imageUrl: null }));
+      };
+      return json(route, {
+        query: q,
+        songs: q ? songs.filter((s) => has(s.title) || has(s.artist) || has(s.movie)).map(view) : [],
+        artists: q ? folders((s) => s.artist) : [],
+        movies: q ? folders((s) => s.movie) : [],
+      });
+    }
     if (method === 'GET' && path === '/api/browse/decades') {
       const keys = ['latest', '2020', '2010', '2000', '1990', '1980', '1970', '1960', '1950'];
       return json(route, keys.map((key) => ({

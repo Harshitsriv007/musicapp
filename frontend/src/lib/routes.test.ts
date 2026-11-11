@@ -15,9 +15,16 @@ describe('routes', () => {
     ['#artist/Arijit%20Singh', { view: 'folder', filter: 'artist', key: 'Arijit Singh' }],
     ['#movie/Brahmastra%20(OST)', { view: 'folder', filter: 'movie', key: 'Brahmastra (OST)' }],
     ['#liked', { view: 'liked' }],
+    ['#search', { view: 'search', q: '' }],
+    ['#search/tum%20hi%20ho', { view: 'search', q: 'tum hi ho' }],
     ['#nonsense', { view: 'home' }],
     ['#genre/pop', { view: 'home' }],
   ])('%s', (hash, route) => expect(parseHash(hash)).toEqual(route));
+
+  it('round-trips search links', () => {
+    expect(parseHash(href({ view: 'search', q: '100% love / ishq' }))).toEqual({ view: 'search', q: '100% love / ishq' });
+    expect(href({ view: 'search', q: '' })).toBe('#search');
+  });
 
   it('round-trips folder links, including special characters', () => {
     const route: Route = { view: 'folder', filter: 'artist', key: 'A.R. Rahman & Friends / 100%' };
@@ -28,6 +35,7 @@ describe('routes', () => {
     expect(tabOf({ view: 'folder', filter: 'decade', key: '1990' })).toBe('home');
     expect(tabOf({ view: 'new' })).toBe('home');
     expect(tabOf({ view: 'downloads' })).toBe('downloads');
+    expect(tabOf({ view: 'search', q: 'x' })).toBe('search');
   });
 
   it.each([

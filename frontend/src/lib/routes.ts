@@ -6,6 +6,7 @@ export type Route =
   | { view: 'new' }
   | { view: 'folders'; type: FolderType }
   | { view: 'folder'; filter: FolderFilter; key: string }
+  | { view: 'search'; q: string }
   | { view: 'library' }
   | { view: 'liked' }
   | { view: 'downloads' }
@@ -27,6 +28,15 @@ export function folderTitle(filter: FolderFilter, key: string): string {
 
 export function parseHash(hash: string): Route {
   const raw = hash.replace(/^#\/?/, '');
+  if (raw === 'search' || raw.startsWith('search/')) {
+    let q = raw.slice('search/'.length);
+    try {
+      q = decodeURIComponent(q);
+    } catch {
+      /* keep raw */
+    }
+    return { view: 'search', q: raw === 'search' ? '' : q };
+  }
   const slash = raw.indexOf('/');
   if (slash > 0) {
     const filter = raw.slice(0, slash) as FolderFilter;
@@ -49,14 +59,17 @@ export function href(route: Route): string {
       return `#${route.type}`;
     case 'folder':
       return `#${route.filter}/${encodeURIComponent(route.key)}`;
+    case 'search':
+      return route.q ? `#search/${encodeURIComponent(route.q)}` : '#search';
     default:
       return `#${route.view}`;
   }
 }
 
 /** Which top-level tab is highlighted for a route. */
-export function tabOf(route: Route): 'home' | 'library' | 'liked' | 'downloads' | 'history' {
+export function tabOf(route: Route): 'home' | 'search' | 'library' | 'liked' | 'downloads' | 'history' {
   switch (route.view) {
+    case 'search':
     case 'library':
     case 'liked':
     case 'downloads':

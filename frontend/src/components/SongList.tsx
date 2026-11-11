@@ -73,7 +73,10 @@ export function SongList({ songs, loading, error, empty, meta, badge, rowKey }: 
                 </span>
                 <span className="song-row__sub">
                   {song.artist ?? 'Unknown artist'}
-                  {meta && <> · {meta(song, i)}</>}
+                  {(() => {
+                    const extra = meta?.(song, i);
+                    return extra != null && extra !== '' ? <> · {extra}</> : null;
+                  })()}
                 </span>
               </div>
               <span className="song-row__duration">{formatDuration(song.durationSeconds)}</span>

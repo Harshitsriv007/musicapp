@@ -261,3 +261,8 @@ h1, h2 { margin: 0; }
 }
 .shelf > [role='listitem'] { min-width: 0; }
 .song-card > .folder-card__title, .song-card > .folder-card__sub { display: block; width: 100%; }
+
+/* ---------- search ---------- */
+.search--big { font-size: 17px; padding: 14px 18px; border-radius: 14px; }
+.search-group { margin-top: 22px; }
+.search-group h2 { font-size: 18px; margin-bottom: 12px; }

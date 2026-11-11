@@ -68,6 +68,15 @@ Every folder page has **Play all**, **Like all / Unlike all** and **Download all
 
 *Movies & albums* depends on the source data: Audius has no movie field, so it only fills up with songs whose titles name the movie (or that belong to an album).
 
+## Search
+
+The **Search** tab (or press <kbd>/</kbd> anywhere) finds songs by **name, artist or movie** as you type, case-insensitively. Results come in three groups:
+- **Artists:** artist folders whose name matches.
+- **Movies & albums:** movie folders whose name matches.
+- **Songs:** best matches first (title starts with your text, then title contains it, then artist, then movie). Each song keeps its like and download buttons and shows its movie.
+
+The query is in the URL (`#search/arijit`), so results can be shared and the back button returns to them.
+
 ## Songs stored in MySQL (downloads)
 
 - **Song details** (title, artist, artwork, release date) are fetched by the cron job and stored in MySQL. The app always reads them from the database, never from the music API.
@@ -91,6 +100,7 @@ All endpoints accept an `X-User-Id` header. The app generates a random id per de
 | Method & path | |
 |---|---|
 | `GET /api/songs?q=&downloaded=&decade=&artist=&movie=&page=&size=` | catalogue / search / songs of a folder |
+| `GET /api/search?q=` | search songs by name, artist or movie + matching artist and movie folders |
 | `GET /api/browse/{decades\|artists\|movies}` | folders with song count and cover image |
 | `GET /api/songs/new?limit=` | newest songs |
 | `GET /api/songs/stream` | SSE: `song-added`, `song-updated` (download progress) |

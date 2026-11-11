@@ -26,12 +26,53 @@ public interface SongRepository extends JpaRepository<Song, Long> {
               and (:q is null
                    or lower(s.title) like lower(concat('%', :q, '%'))
                    or lower(s.artist) like lower(concat('%', :q, '%'))
-                   or lower(s.album) like lower(concat('%', :q, '%')))
+                   or lower(s.album) like lower(concat('%', :q, '%'))
+                   or lower(s.movie) like lower(concat('%', :q, '%')))
             """)
     Page<Song> findFiltered(@Param("q") String query, @Param("status") DownloadStatus status,
                             @Param("releasedFrom") LocalDate releasedFrom, @Param("releasedTo") LocalDate releasedTo,
                             @Param("artist") String artist, @Param("movie") String movie,
                             Pageable pageable);
+
+    /**
+     * Search by song name, artist, movie or album. {@code pattern} is "%text%" and {@code prefix} "text%",
+     * both lower-case with LIKE wildcards escaped by '!'. Best matches first: title starts with the
+     * text, title contains it, artist matches, then movie/album.
+     */
+    @Query("""
+            select s from Song s
+            where lower(s.title) like :pattern escape '!'
+               or lower(s.artist) like :pattern escape '!'
+               or lower(s.movie) like :pattern escape '!'
+               or lower(s.album) like :pattern escape '!'
+            order by
+              case
+                when lower(s.title) like :prefix escape '!' then 0
+                when lower(s.title) like :pattern escape '!' then 1
+                when lower(s.artist) like :pattern escape '!' then 2
+                else 3
+              end,
+              s.releaseDate desc, s.id desc
+            """)
+    List<Song> search(@Param("pattern") String pattern, @Param("prefix") String prefix, Pageable pageable);
+
+    /** Artist folders whose name matches, biggest first. */
+    @Query("""
+            select s.artist, count(s), max(s.imageUrl) from Song s
+            where lower(s.artist) like :pattern escape '!'
+            group by s.artist
+            order by count(s) desc, s.artist
+            """)
+    List<Object[]> searchArtistFolders(@Param("pattern") String pattern, Pageable pageable);
+
+    /** Movie folders whose name matches, biggest first. */
+    @Query("""
+            select s.movie, count(s), max(s.imageUrl) from Song s
+            where lower(s.movie) like :pattern escape '!'
+            group by s.movie
+            order by count(s) desc, s.movie
+            """)
+    List<Object[]> searchMovieFolders(@Param("pattern") String pattern, Pageable pageable);
 
     /** Songs released (originally, else uploaded) on or after {@code from} – the "Latest" folder. */
     @Query("select count(s) from Song s where coalesce(s.originalReleaseDate, s.releaseDate) >= :from")

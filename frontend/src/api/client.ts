@@ -1,5 +1,15 @@
 import { getUserId } from '../lib/userId';
-import type { DownloadStatusEntry, Folder, FolderType, HistoryEntry, LikedEntry, Page, Song, SongQuery } from './types';
+import type {
+  DownloadStatusEntry,
+  Folder,
+  FolderType,
+  HistoryEntry,
+  LikedEntry,
+  Page,
+  SearchResult,
+  Song,
+  SongQuery,
+} from './types';
 
 export const API_BASE: string = import.meta.env.VITE_API_BASE ?? '';
 
@@ -37,6 +47,9 @@ export const api = {
     if (filter.movie) params.set('movie', filter.movie);
     return request<Page<Song>>(`/api/songs?${params.toString().replace(/\+/g, '%20')}`);
   },
+  /** Songs by name, artist or movie, plus matching artist and movie folders. */
+  search: (q: string, init: RequestInit = {}) =>
+    request<SearchResult>(`/api/search?q=${encodeURIComponent(q)}`, init),
   browse: (type: FolderType) => request<Folder[]>(`/api/browse/${type}`),
   likeBatch: (songIds: number[], liked: boolean) =>
     request<void>('/api/likes/batch', { method: 'POST', body: JSON.stringify({ songIds, liked }) }),

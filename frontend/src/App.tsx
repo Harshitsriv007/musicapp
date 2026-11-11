@@ -10,11 +10,13 @@ import { FolderView } from './views/FolderView';
 import { HistoryView } from './views/HistoryView';
 import { HomeView } from './views/HomeView';
 import { LibraryView } from './views/LibraryView';
+import { SearchView } from './views/SearchView';
 import { LikedView } from './views/LikedView';
 import { NewSongsView } from './views/NewSongsView';
 
 const TABS = [
   { id: 'home', label: 'Home' },
+  { id: 'search', label: 'Search' },
   { id: 'library', label: 'All songs' },
   { id: 'liked', label: 'Liked' },
   { id: 'downloads', label: 'Downloads' },
@@ -33,6 +35,19 @@ export default function App() {
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  // "/" opens search from anywhere (unless you are already typing somewhere).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = e.target instanceof HTMLElement && e.target.closest('input, textarea, [contenteditable="true"]');
+      if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        window.location.hash = 'search';
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   return (
@@ -63,6 +78,7 @@ export default function App() {
             {route.view === 'new' && <NewSongsView />}
             {route.view === 'folders' && <FoldersView type={route.type} />}
             {route.view === 'folder' && <FolderView key={`${route.filter}/${route.key}`} filter={route.filter} folderKey={route.key} />}
+            {route.view === 'search' && <SearchView key={route.q} initialQuery={route.q} />}
             {route.view === 'library' && <LibraryView />}
             {route.view === 'liked' && <LikedView />}
             {route.view === 'downloads' && <DownloadsView />}

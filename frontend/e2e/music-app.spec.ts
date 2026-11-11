@@ -189,6 +189,38 @@ test.describe('Listener journeys', () => {
     await expect(page.getByRole('button', { name: 'Unlike all' })).toBeVisible(); // its only song is liked
   });
 
+  test('search by song name, artist and movie', async ({ page }) => {
+    await fakeBackend(page, catalogue);
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Search' }).click();
+    const box = page.getByRole('searchbox', { name: 'Search songs, artists or movies' });
+
+    await box.fill('kesar');
+    await expect(page.getByRole('region', { name: 'Songs' }).getByRole('button', { name: /^Play / })).toHaveText([/Kesariya/]);
+
+    await box.fill('shreya');
+    await expect(page.getByRole('region', { name: 'Artists' }).getByRole('link', { name: 'Shreya Ghoshal, 1 song' })).toBeVisible();
+
+    await box.fill('brahmastra');
+    const songs = page.getByRole('region', { name: 'Songs' });
+    await expect(songs.getByRole('button', { name: /^Play / })).toHaveText([/Kesariya/, /Deva Deva/]);
+    await songs.getByRole('button', { name: 'Like Deva Deva' }).click();
+    await expect(songs.getByRole('button', { name: 'Unlike Deva Deva' })).toBeVisible();
+    await expect(page).toHaveURL(/#search\/brahmastra$/);
+
+    await page.getByRole('region', { name: 'Movies & albums' }).getByRole('link', { name: 'Brahmastra, 2 songs' }).click();
+    await expect(page.getByRole('heading', { name: 'Brahmastra' })).toBeVisible();
+    await page.goBack();
+    await expect(box).toHaveValue('brahmastra');
+  });
+
+  test('press / to search from anywhere', async ({ page }) => {
+    await fakeBackend(page, catalogue);
+    await page.goto('/#liked');
+    await page.keyboard.press('/');
+    await expect(page.getByRole('searchbox', { name: 'Search songs, artists or movies' })).toBeFocused();
+  });
+
   test('installable as an app (PWA manifest)', async ({ page, request }) => {
     await fakeBackend(page, catalogue);
     await page.goto('/#new');
