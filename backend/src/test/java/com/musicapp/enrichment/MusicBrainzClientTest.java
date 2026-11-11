@@ -84,6 +84,28 @@ class MusicBrainzClientTest {
     }
 
     @Test
+    void retriesWhenMusicBrainzIsBusy() {
+        server.expect(requestTo(Matchers.startsWith("https://mb.test/ws/2/recording")))
+                .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators.withServiceUnavailable());
+        respond("Tum Hi Ho", """
+                {"recordings":[{"title":"Tum Hi Ho","score":100,"first-release-date":"2013","artist-credit":[{"name":"Arijit Singh"}]}]}""");
+
+        assertThat(client.findOriginalReleaseDate("Tum Hi Ho", "Arijit Singh")).contains(LocalDate.of(2013, 1, 1));
+        server.verify();
+    }
+
+    @Test
+    void givesUpAfterRepeatedBusyAnswersSoTheJobCanRetryLater() {
+        server.expect(org.springframework.test.web.client.ExpectedCount.times(4),
+                        requestTo(Matchers.startsWith("https://mb.test/ws/2/recording")))
+                .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators.withServiceUnavailable());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> client.findOriginalReleaseDate("Tum Hi Ho", "Arijit Singh"))
+                .isInstanceOf(org.springframework.web.client.HttpServerErrorException.ServiceUnavailable.class);
+        server.verify();
+    }
+
+    @Test
     void mashupsNeverCallMusicBrainz() {
         server.expect(never(), requestTo(Matchers.anything()));
 

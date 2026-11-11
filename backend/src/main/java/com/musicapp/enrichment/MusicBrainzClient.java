@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 /**
@@ -23,9 +25,12 @@ import org.springframework.web.client.RestClient;
 public class MusicBrainzClient {
 
     private static final int MIN_SCORE = 85;
+    /** MusicBrainz answers 503 when busy or throttling: wait 2s, 4s, 8s before giving up. */
+    private static final int MAX_ATTEMPTS = 4;
 
     private final RestClient client;
     private final Duration minInterval;
+    private final Duration backoffBase;
     private final Clock clock;
     private long lastRequestNanos;
 
@@ -37,6 +42,7 @@ public class MusicBrainzClient {
                 .defaultHeader("Accept", "application/json")
                 .build();
         this.minInterval = cfg.minInterval();
+        this.backoffBase = minInterval.isZero() ? Duration.ZERO : Duration.ofSeconds(2);
         this.clock = clock;
     }
 
@@ -69,15 +75,36 @@ public class MusicBrainzClient {
     }
 
     private synchronized Response search(String query) {
-        long waitMs = minInterval.toMillis() - (System.nanoTime() - lastRequestNanos) / 1_000_000;
-        if (lastRequestNanos != 0 && waitMs > 0) {
+        for (int attempt = 1; ; attempt++) {
+            pause(minInterval.toMillis() - (System.nanoTime() - lastRequestNanos) / 1_000_000);
             try {
-                Thread.sleep(waitMs);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return null;
+                return request(query);
+            } catch (HttpServerErrorException.ServiceUnavailable | HttpClientErrorException.TooManyRequests busy) {
+                if (attempt >= MAX_ATTEMPTS || Thread.currentThread().isInterrupted()) {
+                    throw busy;
+                }
+                long retryAfterMs = Optional.ofNullable(busy.getResponseHeaders())
+                        .map(h -> h.getFirst("Retry-After"))
+                        .filter(v -> v.matches("\\d+"))
+                        .map(v -> Long.parseLong(v) * 1000)
+                        .orElse(0L);
+                pause(Math.max(retryAfterMs, backoffBase.toMillis() << (attempt - 1)));
             }
         }
+    }
+
+    private void pause(long millis) {
+        if (millis <= 0 || lastRequestNanos == 0) {
+            return;
+        }
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private Response request(String query) {
         try {
             return client.get()
                     .uri(uri -> uri.path("/ws/2/recording")
