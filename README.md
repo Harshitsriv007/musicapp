@@ -59,11 +59,13 @@ The app opens on **Home**, where songs are arranged in folders:
 | Folder row | Grouped by | Opens |
 |---|---|---|
 | New songs | newest releases (updates live) | `#new` |
-| Songs by year | release year | `#year/2024` |
+| Songs by decade | original release year (from MusicBrainz) or else upload year: Latest (last 12 months), 20s, 10s … 50s (50s also holds older songs) | `#decade/1990`, `#decade/latest` |
 | Artists | artist | `#artist/<name>` |
 | Movies & albums | movie in the title, e.g. `Kesariya (From "Brahmastra")`, else the album name | `#movie/<name>` |
 
 Every folder page has **Play all**, **Like all / Unlike all** and **Download all**, plus like and download buttons on each song.
+**Decades and original release years.** Audius only knows when a track was *uploaded*, so a 1964 classic uploaded in 2023 would otherwise count as 20s. A background job looks each song up in [MusicBrainz](https://musicbrainz.org) (free, about 1 request per second, 30 songs per minute) and stores `original_release_date` when it finds a confident match: the same title, and an artist that matches the uploader or appears in the title. Mashups, remixes, lofi and covers are skipped and stay with their upload year. Each song is checked once. Run it now with `POST /api/admin/enrichment/run`; turn it off with `ENRICHMENT_ENABLED=false`.
+
 *Movies & albums* depends on the source data: Audius has no movie field, so it only fills up with songs whose titles name the movie (or that belong to an album).
 
 ## Songs stored in MySQL (downloads)
@@ -88,8 +90,8 @@ All endpoints accept an `X-User-Id` header. The app generates a random id per de
 
 | Method & path | |
 |---|---|
-| `GET /api/songs?q=&downloaded=&year=&artist=&movie=&page=&size=` | catalogue / search / songs of a folder |
-| `GET /api/browse/{years\|artists\|movies}` | folders with song count and cover image |
+| `GET /api/songs?q=&downloaded=&decade=&artist=&movie=&page=&size=` | catalogue / search / songs of a folder |
+| `GET /api/browse/{decades\|artists\|movies}` | folders with song count and cover image |
 | `GET /api/songs/new?limit=` | newest songs |
 | `GET /api/songs/stream` | SSE: `song-added`, `song-updated` (download progress) |
 | `GET /api/likes` · `PUT/DELETE /api/likes/{songId}` | liked songs |
@@ -98,6 +100,7 @@ All endpoints accept an `X-User-Id` header. The app generates a random id per de
 | `POST /api/downloads {songIds:[...]}` · `POST/DELETE /api/songs/{id}/download` | store / remove audio in MySQL |
 | `GET /api/songs/{id}/audio` | play a downloaded song from MySQL (supports `Range`) |
 | `POST /api/admin/ingestion/run` | trigger the fetch job now |
+| `POST /api/admin/enrichment/run` | look up original release years now (MusicBrainz) |
 
 ## Tests
 

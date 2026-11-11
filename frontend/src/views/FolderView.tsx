@@ -7,12 +7,18 @@ import { PlayIcon } from '../components/Icons';
 import { LikeAllButton } from '../components/LikeAllButton';
 import { SongList } from '../components/SongList';
 import { useDownloads } from '../hooks/DownloadsContext';
-import { href, TYPE_OF } from '../lib/routes';
+import { folderTitle, href, TYPE_OF } from '../lib/routes';
 import { usePlayer } from '../player/PlayerContext';
 
 const PAGE = 100;
 const MAX_SONGS = 1000;
-const KIND: Record<FolderFilter, string> = { year: 'Year', artist: 'Artist', movie: 'Movie / album' };
+const KIND: Record<FolderFilter, string> = { decade: 'Decade', artist: 'Artist', movie: 'Movie / album' };
+
+/** "1964 (orig.)" when MusicBrainz knows the original release, else the upload year. */
+function releaseYear(song: Song) {
+  if (song.originalReleaseDate) return `${song.originalReleaseDate.slice(0, 4)} (orig.)`;
+  return song.releaseDate?.slice(0, 4) ?? 'year unknown';
+}
 
 /** One folder: its songs with like / download per song, plus Play all, Like all and Download all. */
 export function FolderView({ filter, folderKey }: { filter: FolderFilter; folderKey: string }) {
@@ -52,13 +58,15 @@ export function FolderView({ filter, folderKey }: { filter: FolderFilter; folder
   return (
     <section aria-labelledby="folder-heading">
       <a className="back-link" href={href({ view: 'folders', type: TYPE_OF[filter] })}>
-        ← All {TYPE_OF[filter] === 'movies' ? 'movies' : TYPE_OF[filter]}
+        ← All {TYPE_OF[filter]}
       </a>
       <div className="folder-head">
         <Artwork src={cover} size={132} />
         <div className="folder-head__text">
-          <p className="folder-head__kind">{KIND[filter]}</p>
-          <h1 id="folder-heading">{folderKey}</h1>
+          <p className="folder-head__kind">
+            {filter === 'decade' && folderKey === 'latest' ? 'Released in the last 12 months' : KIND[filter]}
+          </p>
+          <h1 id="folder-heading">{folderTitle(filter, folderKey)}</h1>
           <p className="view-head__sub">{loading ? 'Loading…' : `${songs.length} ${songs.length === 1 ? 'song' : 'songs'}`}</p>
           <div className="folder-head__actions">
             <button
@@ -74,7 +82,13 @@ export function FolderView({ filter, folderKey }: { filter: FolderFilter; folder
           </div>
         </div>
       </div>
-      <SongList songs={songs} loading={loading} error={error} empty="This folder is empty." />
+      <SongList
+        songs={songs}
+        loading={loading}
+        error={error}
+        empty="This folder is empty."
+        meta={filter === 'decade' ? releaseYear : undefined}
+      />
     </section>
   );
 }

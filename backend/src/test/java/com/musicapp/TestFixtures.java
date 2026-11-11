@@ -18,7 +18,8 @@ public final class TestFixtures {
                         new AppProperties.Audius(true, audiusUrl, "testapp"),
                         new AppProperties.Jamendo(true, "https://jamendo.test", "cid", "bollywood")),
                 new AppProperties.Cors(List.of("*")),
-                new AppProperties.Download(10_000));
+                new AppProperties.Download(10_000),
+                new AppProperties.Enrichment(true, "https://mb.test", "DhunTest/1.0", 30, java.time.Duration.ZERO));
     }
 
     public static SongEvent event(String id, String title) {

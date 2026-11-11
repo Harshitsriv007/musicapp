@@ -11,12 +11,19 @@ export type Route =
   | { view: 'downloads' }
   | { view: 'history' };
 
-const FOLDER_TYPES: FolderType[] = ['years', 'artists', 'movies'];
-const FILTERS: FolderFilter[] = ['year', 'artist', 'movie'];
+const FOLDER_TYPES: FolderType[] = ['decades', 'artists', 'movies'];
+const FILTERS: FolderFilter[] = ['decade', 'artist', 'movie'];
 const SIMPLE = ['home', 'new', 'library', 'liked', 'downloads', 'history'] as const;
 
-export const FILTER_OF: Record<FolderType, FolderFilter> = { years: 'year', artists: 'artist', movies: 'movie' };
-export const TYPE_OF: Record<FolderFilter, FolderType> = { year: 'years', artist: 'artists', movie: 'movies' };
+export const FILTER_OF: Record<FolderType, FolderFilter> = { decades: 'decade', artists: 'artist', movies: 'movie' };
+export const TYPE_OF: Record<FolderFilter, FolderType> = { decade: 'decades', artist: 'artists', movie: 'movies' };
+
+/** Display name of a folder key: decade '1990' → '90s', 'latest' → 'Latest'; others unchanged. */
+export function folderTitle(filter: FolderFilter, key: string): string {
+  if (filter !== 'decade') return key;
+  if (key === 'latest') return 'Latest';
+  return /^\d{4}$/.test(key) ? `${key.slice(2)}s` : key;
+}
 
 export function parseHash(hash: string): Route {
   const raw = hash.replace(/^#\/?/, '');

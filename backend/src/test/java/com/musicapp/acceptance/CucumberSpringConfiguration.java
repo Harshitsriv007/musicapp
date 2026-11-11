@@ -44,5 +44,6 @@ public class CucumberSpringConfiguration {
         registry.add("spring.datasource.password", MYSQL::getPassword);
         registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
         registry.add("musicapp.providers.audius.base-url", MUSIC_API::baseUrl);
+        registry.add("musicapp.enrichment.base-url", MUSIC_API::baseUrl); // MusicBrainz stubbed on the same WireMock
     }
 }

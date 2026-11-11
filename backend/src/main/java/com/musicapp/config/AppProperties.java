@@ -5,7 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** Strongly typed view of the {@code musicapp.*} configuration tree. */
 @ConfigurationProperties(prefix = "musicapp")
-public record AppProperties(Ingestion ingestion, Kafka kafka, Providers providers, Cors cors, Download download) {
+public record AppProperties(Ingestion ingestion, Kafka kafka, Providers providers, Cors cors, Download download,
+                            Enrichment enrichment) {
 
     /**
      * @param cron          Spring cron for the scheduled fetch ("-" disables it)
@@ -17,6 +18,20 @@ public record AppProperties(Ingestion ingestion, Kafka kafka, Providers provider
         public Ingestion {
             queries = queries == null ? List.of("bollywood") : List.copyOf(queries);
             limitPerQuery = limitPerQuery <= 0 ? 25 : limitPerQuery;
+        }
+    }
+
+    /**
+     * Original-release-year lookup in MusicBrainz (drives the decade folders).
+     *
+     * @param userAgent   MusicBrainz asks every client to identify itself (add contact info if you can)
+     * @param minInterval MusicBrainz allows about one request per second
+     */
+    public record Enrichment(boolean enabled, String baseUrl, String userAgent, int batchSize,
+                             java.time.Duration minInterval) {
+        public Enrichment {
+            batchSize = batchSize <= 0 ? 30 : batchSize;
+            minInterval = minInterval == null ? java.time.Duration.ofMillis(1100) : minInterval;
         }
     }
 

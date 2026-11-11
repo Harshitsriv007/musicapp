@@ -36,12 +36,12 @@ public class SongController {
             @RequestHeader(name = UserIds.HEADER, defaultValue = UserIds.DEFAULT) String userId,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "false") boolean downloaded,
-            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) String decade,
             @RequestParam(required = false) String artist,
             @RequestParam(required = false) String movie,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "30") @Min(1) @Max(100) int size) {
-        return songService.list(UserIds.require(userId), new SongFilter(q, downloaded, year, artist, movie), page, size);
+        return songService.list(UserIds.require(userId), new SongFilter(q, downloaded, decade, artist, movie), page, size);
     }
 
     @GetMapping("/new")

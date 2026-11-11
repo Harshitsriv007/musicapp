@@ -32,7 +32,7 @@ export const api = {
     const params = new URLSearchParams({ page: String(page), size: String(size) });
     if (q) params.set('q', q);
     if (filter.downloaded) params.set('downloaded', 'true');
-    if (filter.year) params.set('year', filter.year);
+    if (filter.decade) params.set('decade', filter.decade);
     if (filter.artist) params.set('artist', filter.artist);
     if (filter.movie) params.set('movie', filter.movie);
     return request<Page<Song>>(`/api/songs?${params.toString().replace(/\+/g, '%20')}`);

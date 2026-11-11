@@ -11,7 +11,10 @@ export interface Song {
   imageUrl: string | null;
   streamUrl: string;
   durationSeconds: number | null;
+  /** Upload date on the music API. */
   releaseDate: string | null;
+  /** When the song first came out (MusicBrainz), if known. Decade folders use this. */
+  originalReleaseDate: string | null;
   source: string;
   addedAt: string | null;
   liked: boolean;
@@ -19,9 +22,9 @@ export interface Song {
   downloadStatus: DownloadStatus;
 }
 
-export type FolderType = 'years' | 'artists' | 'movies';
+export type FolderType = 'decades' | 'artists' | 'movies';
 /** Query parameter used to list the songs inside a folder. */
-export type FolderFilter = 'year' | 'artist' | 'movie';
+export type FolderFilter = 'decade' | 'artist' | 'movie';
 
 export interface Folder {
   key: string;
@@ -32,7 +35,8 @@ export interface Folder {
 
 export interface SongQuery {
   downloaded?: boolean;
-  year?: string;
+  /** 'latest' or a decade start year such as '1990' */
+  decade?: string;
   artist?: string;
   movie?: string;
 }

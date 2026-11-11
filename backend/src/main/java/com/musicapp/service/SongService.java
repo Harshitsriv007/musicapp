@@ -1,5 +1,6 @@
 package com.musicapp.service;
 
+import com.musicapp.browse.Decades;
 import com.musicapp.domain.DownloadStatus;
 import com.musicapp.domain.Song;
 import com.musicapp.ingestion.MovieExtractor;
@@ -8,6 +9,8 @@ import com.musicapp.repository.LikedSongRepository;
 import com.musicapp.repository.SongRepository;
 import com.musicapp.web.dto.PageResponse;
 import com.musicapp.web.dto.SongDto;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -27,10 +30,12 @@ public class SongService {
 
     private final SongRepository songs;
     private final LikedSongRepository likes;
+    private final Clock clock;
 
-    public SongService(SongRepository songs, LikedSongRepository likes) {
+    public SongService(SongRepository songs, LikedSongRepository likes, Clock clock) {
         this.songs = songs;
         this.likes = likes;
+        this.clock = clock;
     }
 
     /**
@@ -63,8 +68,11 @@ public class SongService {
     @Transactional(readOnly = true)
     public PageResponse<SongDto> list(String userId, SongFilter filter, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, NEWEST_FIRST);
+        Decades.DateRange released = filter.decade() == null
+                ? new Decades.DateRange(null, null)
+                : Decades.range(filter.decade(), LocalDate.now(clock));
         Page<Song> result = songs.findFiltered(filter.query(), filter.downloadedOnly() ? DownloadStatus.DOWNLOADED : null,
-                filter.year(), filter.artist(), filter.movie(), pageable);
+                released.from(), released.to(), filter.artist(), filter.movie(), pageable);
         return PageResponse.of(result, list -> toDtos(userId, list));
     }
 

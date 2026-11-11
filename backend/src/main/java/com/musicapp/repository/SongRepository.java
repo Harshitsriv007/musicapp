@@ -2,6 +2,7 @@ package com.musicapp.repository;
 
 import com.musicapp.domain.DownloadStatus;
 import com.musicapp.domain.Song;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -18,7 +19,8 @@ public interface SongRepository extends JpaRepository<Song, Long> {
     @Query("""
             select s from Song s
             where (:status is null or s.downloadStatus = :status)
-              and (:year is null or year(s.releaseDate) = :year)
+              and (:releasedFrom is null or coalesce(s.originalReleaseDate, s.releaseDate) >= :releasedFrom)
+              and (:releasedTo is null or coalesce(s.originalReleaseDate, s.releaseDate) <= :releasedTo)
               and (:artist is null or s.artist = :artist)
               and (:movie is null or s.movie = :movie)
               and (:q is null
@@ -27,15 +29,30 @@ public interface SongRepository extends JpaRepository<Song, Long> {
                    or lower(s.album) like lower(concat('%', :q, '%')))
             """)
     Page<Song> findFiltered(@Param("q") String query, @Param("status") DownloadStatus status,
-                            @Param("year") Integer year, @Param("artist") String artist, @Param("movie") String movie,
+                            @Param("releasedFrom") LocalDate releasedFrom, @Param("releasedTo") LocalDate releasedTo,
+                            @Param("artist") String artist, @Param("movie") String movie,
                             Pageable pageable);
 
-    /** Folders: [year, song count, cover image], newest year first. */
+    /** Songs released (originally, else uploaded) on or after {@code from} – the "Latest" folder. */
+    @Query("select count(s) from Song s where coalesce(s.originalReleaseDate, s.releaseDate) >= :from")
+    long countReleasedSince(@Param("from") LocalDate from);
+
     @Query("""
-            select year(s.releaseDate), count(s), max(s.imageUrl) from Song s
-            where s.releaseDate is not null
-            group by year(s.releaseDate)
-            order by year(s.releaseDate) desc
+            select s.imageUrl from Song s
+            where coalesce(s.originalReleaseDate, s.releaseDate) >= :from and s.imageUrl is not null
+            order by coalesce(s.originalReleaseDate, s.releaseDate) desc
+            """)
+    List<String> imagesReleasedSince(@Param("from") LocalDate from, Pageable pageable);
+
+    List<Song> findByMetadataCheckedAtIsNullOrderByIdAsc(Pageable pageable);
+
+    /** [year, song count, cover image], newest year first – rolled up into decade folders. Uses the
+     *  original release year when MusicBrainz knows it, otherwise the upload year. */
+    @Query("""
+            select year(coalesce(s.originalReleaseDate, s.releaseDate)), count(s), max(s.imageUrl) from Song s
+            where coalesce(s.originalReleaseDate, s.releaseDate) is not null
+            group by year(coalesce(s.originalReleaseDate, s.releaseDate))
+            order by year(coalesce(s.originalReleaseDate, s.releaseDate)) desc
             """)
     List<Object[]> yearFolders(Pageable pageable);
 

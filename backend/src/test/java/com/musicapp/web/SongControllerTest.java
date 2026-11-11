@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class SongControllerTest {
 
     private static final SongDto KESARIYA =
-            new SongDto(1L, "Kesariya", "Arijit Singh", null, null, "Bollywood", "img", "stream", 268, null, "audius", null, true, "NONE");
+            new SongDto(1L, "Kesariya", "Arijit Singh", null, null, "Bollywood", "img", "stream", 268, null, "audius", null, true, "NONE", null);
 
     @Autowired
     MockMvc mvc;
@@ -58,10 +58,10 @@ class SongControllerTest {
 
     @Test
     void passesFolderFiltersToTheService() throws Exception {
-        when(songService.list(eq("guest"), eq(new SongFilter(null, false, 2024, "Arijit Singh", "Brahmastra")), eq(0), eq(100)))
+        when(songService.list(eq("guest"), eq(new SongFilter(null, false, "1990", "Arijit Singh", "Brahmastra")), eq(0), eq(100)))
                 .thenReturn(new PageResponse<>(List.of(KESARIYA), 0, 100, 1, 1));
 
-        mvc.perform(get("/api/songs").param("year", "2024").param("artist", "Arijit Singh")
+        mvc.perform(get("/api/songs").param("decade", "1990").param("artist", "Arijit Singh")
                         .param("movie", "Brahmastra").param("size", "100"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].title").value("Kesariya"));

@@ -11,7 +11,7 @@ import { usePlayer } from '../player/PlayerContext';
 
 const SHELF = 12;
 const SECTIONS: { type: FolderType; title: string; empty: string }[] = [
-  { type: 'years', title: 'Songs by year', empty: 'No release years yet.' },
+  { type: 'decades', title: 'Songs by decade', empty: 'No release dates yet.' },
   { type: 'artists', title: 'Artists', empty: 'No artists yet.' },
   {
     type: 'movies',

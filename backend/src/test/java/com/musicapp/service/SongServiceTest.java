@@ -30,7 +30,8 @@ class SongServiceTest {
 
     private final SongRepository songs = mock(SongRepository.class);
     private final LikedSongRepository likes = mock(LikedSongRepository.class);
-    private final SongService service = new SongService(songs, likes);
+    private final SongService service = new SongService(songs, likes,
+            java.time.Clock.fixed(java.time.Instant.parse("2026-06-15T00:00:00Z"), java.time.ZoneOffset.UTC));
 
     @Test
     void upsertCreatesUnknownSong() {
@@ -103,34 +104,43 @@ class SongServiceTest {
 
     @Test
     void listUsesSearchWhenQueryGiven() {
-        when(songs.findFiltered(eq("arijit"), isNull(), isNull(), isNull(), isNull(), any()))
+        when(songs.findFiltered(eq("arijit"), isNull(), isNull(), isNull(), isNull(), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of(song(1, "A"))));
         when(likes.findLikedSongIds(any(), anyCollection())).thenReturn(Set.of());
 
         var page = service.list("riya", new SongFilter("  arijit ", false, null, null, null), 0, 10);
 
         assertThat(page.content()).hasSize(1);
-        verify(songs).findFiltered(eq("arijit"), isNull(), isNull(), isNull(), isNull(), any());
+        verify(songs).findFiltered(eq("arijit"), isNull(), isNull(), isNull(), isNull(), isNull(), any());
     }
 
     @Test
     void listFiltersByFolder() {
-        when(songs.findFiltered(isNull(), isNull(), eq(2024), eq("Arijit Singh"), eq("Brahmastra"), any()))
-                .thenReturn(new PageImpl<>(List.of()));
+        when(songs.findFiltered(any(), any(), any(), any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of()));
 
-        service.list("riya", new SongFilter(null, false, 2024, " Arijit Singh ", "Brahmastra"), 0, 10);
+        service.list("riya", new SongFilter(null, false, "1990", " Arijit Singh ", "Brahmastra"), 0, 10);
 
-        verify(songs).findFiltered(isNull(), isNull(), eq(2024), eq("Arijit Singh"), eq("Brahmastra"), any());
+        verify(songs).findFiltered(isNull(), isNull(), eq(java.time.LocalDate.of(1990, 1, 1)),
+                eq(java.time.LocalDate.of(1999, 12, 31)), eq("Arijit Singh"), eq("Brahmastra"), any());
+    }
+
+    @Test
+    void latestFolderIsTheLastTwelveMonths() {
+        when(songs.findFiltered(any(), any(), any(), any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of()));
+
+        service.list("riya", new SongFilter(null, false, "latest", null, null), 0, 10);
+
+        verify(songs).findFiltered(isNull(), isNull(), eq(java.time.LocalDate.of(2025, 6, 15)), isNull(), isNull(), isNull(), any());
     }
 
     @Test
     void listCanBeRestrictedToDownloadedSongs() {
-        when(songs.findFiltered(isNull(), eq(DownloadStatus.DOWNLOADED), isNull(), isNull(), isNull(), any()))
+        when(songs.findFiltered(isNull(), eq(DownloadStatus.DOWNLOADED), isNull(), isNull(), isNull(), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of()));
 
         service.list("riya", new SongFilter(" ", true, null, null, null), 0, 10);
 
-        verify(songs).findFiltered(isNull(), eq(DownloadStatus.DOWNLOADED), isNull(), isNull(), isNull(), any());
+        verify(songs).findFiltered(isNull(), eq(DownloadStatus.DOWNLOADED), isNull(), isNull(), isNull(), isNull(), any());
     }
 
     @Test

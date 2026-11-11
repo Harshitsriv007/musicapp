@@ -15,5 +15,10 @@ public class CommonSteps {
         jdbc.execute("DELETE FROM liked_songs");
         jdbc.execute("DELETE FROM songs");
         CucumberSpringConfiguration.MUSIC_API.resetAll();
+        // MusicBrainz (same WireMock): "no match" unless a scenario says otherwise.
+        CucumberSpringConfiguration.MUSIC_API.stubFor(com.github.tomakehurst.wiremock.client.WireMock
+                .get(com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo("/ws/2/recording"))
+                .atPriority(10)
+                .willReturn(com.github.tomakehurst.wiremock.client.WireMock.okJson("{\"recordings\":[]}")));
     }
 }

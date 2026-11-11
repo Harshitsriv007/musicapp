@@ -78,5 +78,15 @@ musicapp:
       base-url: ${JAMENDO_BASE_URL:https://api.jamendo.com}
       client-id: ${JAMENDO_CLIENT_ID:}
       tags: ${JAMENDO_TAGS:bollywood+indian}
+  enrichment:
+    # Look up each song's original release year in MusicBrainz (free) for the decade folders.
+    enabled: ${ENRICHMENT_ENABLED:true}
+    base-url: ${MUSICBRAINZ_BASE_URL:https://musicbrainz.org}
+    # MusicBrainz asks clients to identify themselves; add a contact URL/email if you run this publicly.
+    user-agent: ${MUSICBRAINZ_USER_AGENT:DhunMusicApp/1.0 ( self-hosted )}
+    batch-size: 30
+    min-interval: 1100ms
+    initial-delay: ${ENRICHMENT_INITIAL_DELAY:30s}
+    interval: ${ENRICHMENT_INTERVAL:1m}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:*}

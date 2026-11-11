@@ -4,7 +4,7 @@ import type { Folder, FolderType } from '../api/types';
 import { FolderCard } from '../components/FolderCard';
 import { FILTER_OF, href } from '../lib/routes';
 
-const TITLES: Record<FolderType, string> = { years: 'Songs by year', artists: 'Artists', movies: 'Movies & albums' };
+const TITLES: Record<FolderType, string> = { decades: 'Songs by decade', artists: 'Artists', movies: 'Movies & albums' };
 
 /** All folders of one kind (every year / artist / movie), with a filter box. */
 export function FoldersView({ type }: { type: FolderType }) {
@@ -35,7 +35,7 @@ export function FoldersView({ type }: { type: FolderType }) {
           {folders && <p className="view-head__sub">{folders.length} folders</p>}
         </div>
       </div>
-      {type !== 'years' && (
+      {type !== 'decades' && (
         <input
           className="search"
           type="search"

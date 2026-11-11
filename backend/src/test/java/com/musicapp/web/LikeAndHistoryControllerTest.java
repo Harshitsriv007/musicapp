@@ -62,7 +62,7 @@ class LikeAndHistoryControllerTest {
 
     @Test
     void recordPlayReturnsCreatedEntry() throws Exception {
-        var song = new SongDto(5L, "Kesariya", null, null, null, null, null, "s", null, null, "audius", null, false, "NONE");
+        var song = new SongDto(5L, "Kesariya", null, null, null, null, null, "s", null, null, "audius", null, false, "NONE", null);
         when(historyService.recordPlay("riya", 5L)).thenReturn(new HistoryEntryDto(1L, song, Instant.parse("2026-01-01T00:00:00Z")));
 
         mvc.perform(post("/api/history").header("X-User-Id", "riya")

@@ -76,6 +76,28 @@ describe('FolderView', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'All downloaded' })).toBeDisabled());
   });
 
+  it('shows the original release year in decade folders', async () => {
+    mockFetch({
+      'GET /api/songs': {
+        content: [song(7, 'Lag Ja Gale', { originalReleaseDate: '1964-01-01', releaseDate: '2023-02-01' })],
+        page: 0, size: 100, totalElements: 1, totalPages: 1,
+      },
+    });
+    const audio = new FakeAudio();
+    render(
+      <LikesProvider>
+        <DownloadsProvider>
+          <PlayerProvider audioFactory={() => audio.asElement()}>
+            <FolderView filter="decade" folderKey="1960" />
+          </PlayerProvider>
+        </DownloadsProvider>
+      </LikesProvider>,
+    );
+
+    expect(await screen.findByRole('heading', { name: '60s' })).toBeInTheDocument();
+    expect(await screen.findByText(/1964 \(orig\.\)/)).toBeInTheDocument();
+  });
+
   it('plays the whole folder in order', async () => {
     mockFetch({
       'GET /api/songs': { content: brahmastra, page: 0, size: 100, totalElements: 2, totalPages: 1 },
