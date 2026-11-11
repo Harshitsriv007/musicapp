@@ -33,6 +33,7 @@ export function song(id: number, title: string, extra: Partial<Song> = {}): Song
     title,
     artist: 'Arijit Singh',
     album: null,
+    movie: null,
     genre: 'Bollywood',
     imageUrl: `https://img.test/${id}.jpg`,
     streamUrl: `https://stream.test/${id}`,

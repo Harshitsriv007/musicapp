@@ -13,7 +13,7 @@ export function DownloadsView() {
   useEffect(() => {
     let cancelled = false;
     api
-      .songs('', 0, 100, true)
+      .songs('', 0, 100, { downloaded: true })
       .then((res) => {
         if (cancelled) return;
         setSongs(res.content);

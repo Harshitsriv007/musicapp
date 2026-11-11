@@ -10,6 +10,7 @@ public record SongDto(
         String title,
         String artist,
         String album,
+        String movie,
         String genre,
         String imageUrl,
         String streamUrl,
@@ -27,7 +28,7 @@ public record SongDto(
 
     public static SongDto from(Song s, boolean liked) {
         boolean local = s.getDownloadStatus() == DownloadStatus.DOWNLOADED;
-        return new SongDto(s.getId(), s.getTitle(), s.getArtist(), s.getAlbum(), s.getGenre(),
+        return new SongDto(s.getId(), s.getTitle(), s.getArtist(), s.getAlbum(), s.getMovie(), s.getGenre(),
                 s.getImageUrl(), local ? localAudioPath(s.getId()) : s.getStreamUrl(),
                 s.getDurationSeconds(), s.getReleaseDate(), s.getSource(), s.getCreatedAt(), liked,
                 s.getDownloadStatus().name());

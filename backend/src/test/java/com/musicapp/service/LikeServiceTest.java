@@ -67,6 +67,27 @@ class LikeServiceTest {
     }
 
     @Test
+    void likeAFolderSavesOnlySongsNotLikedYet() {
+        when(likes.findLikedSongIds("riya", java.util.Set.of(1L, 2L, 3L))).thenReturn(java.util.Set.of(2L));
+        when(songs.findAllById(any())).thenReturn(List.of(song(1, "A"), song(2, "B"), song(3, "C")));
+
+        service.setLiked("riya", List.of(1L, 2L, 3L, 1L), true);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<LikedSong>> saved = ArgumentCaptor.forClass(List.class);
+        verify(likes).saveAll(saved.capture());
+        assertThat(saved.getValue()).extracting(l -> l.getSong().getTitle()).containsExactly("A", "C");
+    }
+
+    @Test
+    void unlikeAFolderDeletesAllItsLikes() {
+        service.setLiked("riya", List.of(1L, 2L), false);
+
+        verify(likes).deleteByUserAndSongs("riya", java.util.Set.of(1L, 2L));
+        verify(likes, never()).saveAll(any());
+    }
+
+    @Test
     void listMarksEverySongAsLiked() {
         when(likes.findByUser(any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(new LikedSong("riya", song(1, "Kesariya"), NOW))));

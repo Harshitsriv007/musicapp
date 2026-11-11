@@ -22,6 +22,10 @@ public interface LikedSongRepository extends JpaRepository<LikedSong, Long> {
     Set<Long> findLikedSongIds(@Param("userId") String userId, @Param("songIds") Collection<Long> songIds);
 
     @Modifying
+    @Query("delete from LikedSong l where l.userId = :userId and l.song.id in :songIds")
+    int deleteByUserAndSongs(@Param("userId") String userId, @Param("songIds") Collection<Long> songIds);
+
+    @Modifying
     @Query("delete from LikedSong l where l.userId = :userId and l.song.id = :songId")
     int deleteByUserAndSong(@Param("userId") String userId, @Param("songId") Long songId);
 }

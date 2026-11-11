@@ -4,31 +4,33 @@ import { LikesProvider } from './hooks/LikesContext';
 import { MiniPlayer } from './player/MiniPlayer';
 import { PlayerProvider } from './player/PlayerContext';
 import { DownloadsView } from './views/DownloadsView';
+import { parseHash, tabOf, type Route } from './lib/routes';
+import { FoldersView } from './views/FoldersView';
+import { FolderView } from './views/FolderView';
 import { HistoryView } from './views/HistoryView';
+import { HomeView } from './views/HomeView';
 import { LibraryView } from './views/LibraryView';
 import { LikedView } from './views/LikedView';
 import { NewSongsView } from './views/NewSongsView';
 
 const TABS = [
-  { id: 'new', label: 'New' },
+  { id: 'home', label: 'Home' },
   { id: 'library', label: 'All songs' },
   { id: 'liked', label: 'Liked' },
   { id: 'downloads', label: 'Downloads' },
   { id: 'history', label: 'History' },
 ] as const;
-type TabId = (typeof TABS)[number]['id'];
-
-const tabFromHash = (): TabId => {
-  const h = window.location.hash.replace('#', '');
-  return (TABS.find((t) => t.id === h)?.id ?? 'new') as TabId;
-};
 
 export default function App() {
-  const [tab, setTab] = useState<TabId>(tabFromHash);
+  const [route, setRoute] = useState<Route>(() => parseHash(window.location.hash));
   const [historyVersion, setHistoryVersion] = useState(0);
+  const tab = tabOf(route);
 
   useEffect(() => {
-    const onHash = () => setTab(tabFromHash());
+    const onHash = () => {
+      setRoute(parseHash(window.location.hash));
+      window.scrollTo({ top: 0 });
+    };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
@@ -39,7 +41,7 @@ export default function App() {
       <PlayerProvider onPlayRecorded={() => setHistoryVersion((v) => v + 1)}>
         <div className="app">
           <header className="topbar">
-            <a className="brand" href="#new" aria-label="Dhun home">
+            <a className="brand" href="#home" aria-label="Dhun home">
               <img src="/favicon.svg" alt="" width={28} height={28} />
               <span>Dhun</span>
             </a>
@@ -57,11 +59,14 @@ export default function App() {
             </nav>
           </header>
           <main className="content">
-            {tab === 'new' && <NewSongsView />}
-            {tab === 'library' && <LibraryView />}
-            {tab === 'liked' && <LikedView />}
-            {tab === 'downloads' && <DownloadsView />}
-            {tab === 'history' && <HistoryView version={historyVersion} />}
+            {route.view === 'home' && <HomeView />}
+            {route.view === 'new' && <NewSongsView />}
+            {route.view === 'folders' && <FoldersView type={route.type} />}
+            {route.view === 'folder' && <FolderView key={`${route.filter}/${route.key}`} filter={route.filter} folderKey={route.key} />}
+            {route.view === 'library' && <LibraryView />}
+            {route.view === 'liked' && <LikedView />}
+            {route.view === 'downloads' && <DownloadsView />}
+            {route.view === 'history' && <HistoryView version={historyVersion} />}
           </main>
           <MiniPlayer />
         </div>

@@ -8,6 +8,10 @@ import com.musicapp.web.dto.PageResponse;
 import com.musicapp.web.dto.SongDto;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -43,6 +47,23 @@ public class LikeService {
     @Transactional
     public void unlike(String userId, Long songId) {
         likes.deleteByUserAndSong(userId, songId);
+    }
+
+    /** Like or unlike many songs at once (a whole folder). Unknown ids are ignored. */
+    @Transactional
+    public void setLiked(String userId, Collection<Long> songIds, boolean liked) {
+        Set<Long> ids = new LinkedHashSet<>(songIds);
+        if (!liked) {
+            likes.deleteByUserAndSongs(userId, ids);
+            return;
+        }
+        Set<Long> already = likes.findLikedSongIds(userId, ids);
+        Instant now = Instant.now(clock);
+        List<LikedSong> toSave = songs.findAllById(ids).stream()
+                .filter(s -> !already.contains(s.getId()))
+                .map(s -> new LikedSong(userId, s, now))
+                .toList();
+        likes.saveAll(toSave);
     }
 
     @Transactional(readOnly = true)

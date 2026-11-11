@@ -47,6 +47,16 @@ class SongServiceTest {
     }
 
     @Test
+    void upsertWorksOutTheMovieFromTheTitle() {
+        when(songs.findBySourceAndExternalId(any(), any())).thenReturn(Optional.empty());
+        when(songs.saveAndFlush(any())).thenAnswer(inv -> ((Song) inv.getArgument(0)).withId(3L));
+
+        var created = service.upsert(event("9", "Kesariya (From \"Brahmastra\")"));
+
+        assertThat(created).get().extracting(SongDto::movie).isEqualTo("Brahmastra");
+    }
+
+    @Test
     void upsertRefreshesExistingSongWithoutReportingItAsNew() {
         Song existing = song(5, "Old title");
         when(songs.findBySourceAndExternalId("audius", "1")).thenReturn(Optional.of(existing));
@@ -93,22 +103,34 @@ class SongServiceTest {
 
     @Test
     void listUsesSearchWhenQueryGiven() {
-        when(songs.findFiltered(eq("arijit"), isNull(), any())).thenReturn(new PageImpl<>(List.of(song(1, "A"))));
+        when(songs.findFiltered(eq("arijit"), isNull(), isNull(), isNull(), isNull(), any()))
+                .thenReturn(new PageImpl<>(List.of(song(1, "A"))));
         when(likes.findLikedSongIds(any(), anyCollection())).thenReturn(Set.of());
 
-        var page = service.list("riya", "  arijit ", false, 0, 10);
+        var page = service.list("riya", new SongFilter("  arijit ", false, null, null, null), 0, 10);
 
         assertThat(page.content()).hasSize(1);
-        verify(songs).findFiltered(eq("arijit"), isNull(), any());
+        verify(songs).findFiltered(eq("arijit"), isNull(), isNull(), isNull(), isNull(), any());
+    }
+
+    @Test
+    void listFiltersByFolder() {
+        when(songs.findFiltered(isNull(), isNull(), eq(2024), eq("Arijit Singh"), eq("Brahmastra"), any()))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        service.list("riya", new SongFilter(null, false, 2024, " Arijit Singh ", "Brahmastra"), 0, 10);
+
+        verify(songs).findFiltered(isNull(), isNull(), eq(2024), eq("Arijit Singh"), eq("Brahmastra"), any());
     }
 
     @Test
     void listCanBeRestrictedToDownloadedSongs() {
-        when(songs.findFiltered(isNull(), eq(DownloadStatus.DOWNLOADED), any())).thenReturn(new PageImpl<>(List.of()));
+        when(songs.findFiltered(isNull(), eq(DownloadStatus.DOWNLOADED), isNull(), isNull(), isNull(), any()))
+                .thenReturn(new PageImpl<>(List.of()));
 
-        service.list("riya", " ", true, 0, 10);
+        service.list("riya", new SongFilter(" ", true, null, null, null), 0, 10);
 
-        verify(songs).findFiltered(isNull(), eq(DownloadStatus.DOWNLOADED), any());
+        verify(songs).findFiltered(isNull(), eq(DownloadStatus.DOWNLOADED), isNull(), isNull(), isNull(), any());
     }
 
     @Test
