@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { getSession, setSession } from '../lib/session';
 import { mockFetch, song } from '../test/fakes';
 import { api, ApiError, audioUrl } from './client';
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  setSession(null);
+});
+
+const headersOf = (init: RequestInit | undefined) => init!.headers as Record<string, string>;
 
 describe('api client', () => {
   it('sends a stable per-device X-User-Id header', async () => {
@@ -70,5 +76,33 @@ describe('api client', () => {
     mockFetch({ 'PUT /api/likes/9': new Response(null, { status: 404 }) });
 
     await expect(api.like(9)).rejects.toBeInstanceOf(ApiError);
+  });
+
+  it('sends the login token so likes and history follow the account', async () => {
+    const fetchMock = mockFetch({ 'POST /api/auth/login': { token: 'tok', username: 'riya' } });
+
+    const res = await api.logIn('riya', 'secret-123');
+    setSession(res);
+    await api.like(1);
+
+    expect(headersOf(fetchMock.mock.calls[0][1]).Authorization).toBeUndefined();
+    expect(headersOf(fetchMock.mock.calls[1][1]).Authorization).toBe('Bearer tok');
+    expect(headersOf(fetchMock.mock.calls[1][1])['X-User-Id']).toBeTruthy();
+  });
+
+  it('forgets an expired session', async () => {
+    setSession({ token: 'old', username: 'riya' });
+    mockFetch({ 'GET /api/likes': new Response(null, { status: 401 }) });
+
+    await expect(api.liked()).rejects.toBeInstanceOf(ApiError);
+    expect(getSession()).toBeNull();
+  });
+
+  it('surfaces the server error message', async () => {
+    mockFetch({
+      'POST /api/auth/signup': new Response(JSON.stringify({ detail: 'That username is already taken' }), { status: 409 }),
+    });
+
+    await expect(api.signUp('riya', 'secret-123')).rejects.toThrow('That username is already taken');
   });
 });

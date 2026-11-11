@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,9 +23,9 @@ public class SearchController {
     /** Search songs by name, artist or movie: GET /api/search?q=arijit */
     @GetMapping("/api/search")
     public SearchResultDto search(
-            @RequestHeader(name = UserIds.HEADER, defaultValue = UserIds.DEFAULT) String userId,
+            @CurrentUser String userId,
             @RequestParam(defaultValue = "") @Size(max = 100) String q,
             @RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit) {
-        return searchService.search(UserIds.require(userId), q, limit);
+        return searchService.search(userId, q, limit);
     }
 }

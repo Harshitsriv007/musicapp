@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { AccountMenu } from './components/AccountMenu';
+import { AccountProvider, useAccount } from './hooks/AccountContext';
 import { DownloadsProvider } from './hooks/DownloadsContext';
 import { LikesProvider } from './hooks/LikesContext';
 import { MiniPlayer } from './player/MiniPlayer';
@@ -24,6 +26,20 @@ const TABS = [
 ] as const;
 
 export default function App() {
+  return (
+    <AccountProvider>
+      <AccountScope />
+    </AccountProvider>
+  );
+}
+
+/** Logging in or out switches whose likes and history are shown, so every list reloads. */
+function AccountScope() {
+  const { username } = useAccount();
+  return <Shell key={username ?? ''} />;
+}
+
+function Shell() {
   const [route, setRoute] = useState<Route>(() => parseHash(window.location.hash));
   const [historyVersion, setHistoryVersion] = useState(0);
   const tab = tabOf(route);
@@ -72,6 +88,7 @@ export default function App() {
                 </a>
               ))}
             </nav>
+            <AccountMenu />
           </header>
           <main className="content">
             {route.view === 'home' && <HomeView />}

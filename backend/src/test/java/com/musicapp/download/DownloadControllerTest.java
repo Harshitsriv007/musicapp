@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.musicapp.account.AccountService;
 import com.musicapp.service.SongNotFoundException;
 import java.io.OutputStream;
 import java.util.Arrays;
@@ -36,6 +37,10 @@ class DownloadControllerTest {
 
     @Autowired
     MockMvc mvc;
+
+    /** Needed by the @CurrentUser resolver; unknown tokens by default. */
+    @MockitoBean
+    AccountService accountService;
 
     @MockitoBean
     DownloadService downloadService;

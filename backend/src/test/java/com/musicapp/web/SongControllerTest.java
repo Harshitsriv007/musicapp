@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.musicapp.account.AccountService;
 import com.musicapp.service.SongFilter;
 import com.musicapp.service.SongNotFoundException;
 import com.musicapp.service.SongService;
@@ -28,6 +29,10 @@ class SongControllerTest {
 
     @Autowired
     MockMvc mvc;
+
+    /** Needed by the @CurrentUser resolver; unknown tokens by default. */
+    @MockitoBean
+    AccountService accountService;
 
     @MockitoBean
     SongService songService;

@@ -12,7 +12,6 @@ import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,7 +32,7 @@ public class SongController {
 
     @GetMapping
     public PageResponse<SongDto> list(
-            @RequestHeader(name = UserIds.HEADER, defaultValue = UserIds.DEFAULT) String userId,
+            @CurrentUser String userId,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "false") boolean downloaded,
             @RequestParam(required = false) String decade,
@@ -41,21 +40,21 @@ public class SongController {
             @RequestParam(required = false) String movie,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "30") @Min(1) @Max(100) int size) {
-        return songService.list(UserIds.require(userId), new SongFilter(q, downloaded, decade, artist, movie), page, size);
+        return songService.list(userId, new SongFilter(q, downloaded, decade, artist, movie), page, size);
     }
 
     @GetMapping("/new")
     public List<SongDto> newest(
-            @RequestHeader(name = UserIds.HEADER, defaultValue = UserIds.DEFAULT) String userId,
+            @CurrentUser String userId,
             @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
-        return songService.newest(UserIds.require(userId), limit);
+        return songService.newest(userId, limit);
     }
 
     @GetMapping("/{id}")
     public SongDto get(
-            @RequestHeader(name = UserIds.HEADER, defaultValue = UserIds.DEFAULT) String userId,
+            @CurrentUser String userId,
             @PathVariable Long id) {
-        return songService.get(UserIds.require(userId), id);
+        return songService.get(userId, id);
     }
 
     /** Live feed of newly added songs (Server-Sent Events). */

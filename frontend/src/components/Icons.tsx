@@ -53,3 +53,6 @@ export const DownloadedIcon = (p: SVGProps<SVGSVGElement>) => (
     <path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="var(--bg)" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+export const UserIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}><circle cx="12" cy="8" r="4" /><path d="M4 20a8 8 0 0 1 16 0 1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" /></svg>
+);

@@ -17,4 +17,9 @@ public interface PlayHistoryRepository extends JpaRepository<PlayHistory, Long> 
     @Modifying
     @Query("delete from PlayHistory h where h.userId = :userId")
     int deleteByUser(@Param("userId") String userId);
+
+    /** Moves a device's play history to an account. */
+    @Modifying
+    @Query("update PlayHistory h set h.userId = :to where h.userId = :from")
+    int reassign(@Param("from") String from, @Param("to") String to);
 }

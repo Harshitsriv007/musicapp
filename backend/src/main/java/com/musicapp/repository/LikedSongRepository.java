@@ -28,4 +28,16 @@ public interface LikedSongRepository extends JpaRepository<LikedSong, Long> {
     @Modifying
     @Query("delete from LikedSong l where l.userId = :userId and l.song.id = :songId")
     int deleteByUserAndSong(@Param("userId") String userId, @Param("songId") Long songId);
+
+    /**
+     * Moves a device's likes to an account. Songs the account already liked are skipped
+     * (UPDATE IGNORE leaves them on the device) and then dropped.
+     */
+    @Modifying
+    @Query(value = "UPDATE IGNORE liked_songs SET user_id = :to WHERE user_id = :from", nativeQuery = true)
+    int reassign(@Param("from") String from, @Param("to") String to);
+
+    @Modifying
+    @Query("delete from LikedSong l where l.userId = :userId")
+    int deleteByUser(@Param("userId") String userId);
 }

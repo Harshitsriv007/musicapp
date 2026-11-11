@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.musicapp.account.AccountService;
 import com.musicapp.repository.SongRepository;
 import java.time.LocalDate;
 import java.util.List;
@@ -24,6 +25,10 @@ class BrowseControllerTest {
 
     @Autowired
     MockMvc mvc;
+
+    /** Needed by the @CurrentUser resolver; unknown tokens by default. */
+    @MockitoBean
+    AccountService accountService;
 
     @MockitoBean
     SongRepository songs;

@@ -1,5 +1,7 @@
+import { getSession, setSession } from '../lib/session';
 import { getUserId } from '../lib/userId';
 import type {
+  AuthResponse,
   DownloadStatusEntry,
   Folder,
   FolderType,
@@ -20,15 +22,24 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const session = getSession();
   const response = await fetch(API_BASE + path, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
+      // Sent even when logged in: sign-up / login move this device's likes and history into the account.
       'X-User-Id': getUserId(),
+      ...(session ? { Authorization: `Bearer ${session.token}` } : {}),
       ...(init.headers ?? {}),
     },
   });
+  // The session expired or was logged out elsewhere: fall back to this device's own (anonymous) data.
+  if (response.status === 401 && session && getSession()?.token === session.token) {
+    setSession(null);
+  }
   if (!response.ok) {
+    const detail = await errorDetail(response);
+    if (detail) throw new ApiError(response.status, detail);
     throw new ApiError(response.status, `${init.method ?? 'GET'} ${path} failed with ${response.status}`);
   }
   // 202/204 may or may not carry a body (e.g. POST /api/downloads returns the queued statuses).
@@ -36,7 +47,22 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
+/** The human-readable "detail" of a Spring ProblemDetail error body, if any. */
+async function errorDetail(response: Response): Promise<string | null> {
+  try {
+    const body = (await response.json()) as { detail?: unknown };
+    return typeof body.detail === 'string' ? body.detail : null;
+  } catch {
+    return null;
+  }
+}
+
 export const api = {
+  signUp: (username: string, password: string) =>
+    request<AuthResponse>('/api/auth/signup', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  logIn: (username: string, password: string) =>
+    request<AuthResponse>('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  logOut: () => request<void>('/api/auth/logout', { method: 'POST' }),
   newSongs: (limit = 50) => request<Song[]>(`/api/songs/new?limit=${limit}`),
   songs: (q: string, page = 0, size = 30, filter: SongQuery = {}) => {
     const params = new URLSearchParams({ page: String(page), size: String(size) });

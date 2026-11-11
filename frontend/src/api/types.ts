@@ -71,3 +71,8 @@ export interface LikedEntry {
   song: Song;
   likedAt: string;
 }
+
+export interface AuthResponse {
+  token: string;
+  username: string;
+}
