@@ -2,6 +2,7 @@ package com.musicapp.service;
 
 import com.musicapp.domain.DownloadStatus;
 import com.musicapp.domain.Song;
+import com.musicapp.ingestion.MovieExtractor;
 import com.musicapp.ingestion.SongEvent;
 import com.musicapp.repository.LikedSongRepository;
 import com.musicapp.repository.SongRepository;
@@ -44,6 +45,7 @@ public class SongService {
         song.setTitle(e.title());
         song.setArtist(e.artist());
         song.setAlbum(e.album());
+        song.setMovie(MovieExtractor.extract(e.title(), e.album()));
         song.setGenre(e.genre());
         song.setImageUrl(e.imageUrl());
         song.setStreamUrl(e.streamUrl());
@@ -59,10 +61,10 @@ public class SongService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<SongDto> list(String userId, String query, boolean downloadedOnly, int page, int size) {
+    public PageResponse<SongDto> list(String userId, SongFilter filter, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, NEWEST_FIRST);
-        String q = (query == null || query.isBlank()) ? null : query.strip();
-        Page<Song> result = songs.findFiltered(q, downloadedOnly ? DownloadStatus.DOWNLOADED : null, pageable);
+        Page<Song> result = songs.findFiltered(filter.query(), filter.downloadedOnly() ? DownloadStatus.DOWNLOADED : null,
+                filter.year(), filter.artist(), filter.movie(), pageable);
         return PageResponse.of(result, list -> toDtos(userId, list));
     }
 

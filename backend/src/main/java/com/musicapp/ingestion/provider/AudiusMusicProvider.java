@@ -75,7 +75,7 @@ public class AudiusMusicProvider implements MusicProvider {
                 t.id(),
                 ProviderSupport.truncate(t.title(), 512),
                 ProviderSupport.truncate(t.user() == null ? null : t.user().name(), 255),
-                null,
+                ProviderSupport.truncate(t.albumName(), 255),
                 ProviderSupport.truncate(t.genre(), 255),
                 t.artworkUrl(),
                 baseUrl + "/v1/tracks/" + t.id() + "/stream?app_name=" + appName,
@@ -90,6 +90,9 @@ public class AudiusMusicProvider implements MusicProvider {
     record AudiusUser(String name, String handle) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    record AlbumBacklink(@JsonProperty("playlist_name") String playlistName) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
     record AudiusTrack(
             String id,
             String title,
@@ -101,7 +104,12 @@ public class AudiusMusicProvider implements MusicProvider {
             AudiusUser user,
             @JsonProperty("is_delete") Boolean deleted,
             @JsonProperty("is_available") Boolean available,
-            @JsonProperty("is_stream_gated") Boolean streamGated) {
+            @JsonProperty("is_stream_gated") Boolean streamGated,
+            @JsonProperty("album_backlink") AlbumBacklink albumBacklink) {
+
+        String albumName() {
+            return albumBacklink == null ? null : albumBacklink.playlistName();
+        }
 
         boolean isPlayable() {
             return id != null && title != null

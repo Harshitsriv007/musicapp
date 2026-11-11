@@ -52,6 +52,20 @@ Settings live in `.env` (see [.env.example](.env.example)):
 | `DOWNLOAD_MAX_BYTES` | `104857600` (100 MB per song) |
 | `JAMENDO_ENABLED` / `JAMENDO_CLIENT_ID` | `false` / empty |
 
+## Home screen: folders
+
+The app opens on **Home**, where songs are arranged in folders:
+
+| Folder row | Grouped by | Opens |
+|---|---|---|
+| New songs | newest releases (updates live) | `#new` |
+| Songs by year | release year | `#year/2024` |
+| Artists | artist | `#artist/<name>` |
+| Movies & albums | movie in the title, e.g. `Kesariya (From "Brahmastra")`, else the album name | `#movie/<name>` |
+
+Every folder page has **Play all**, **Like all / Unlike all** and **Download all**, plus like and download buttons on each song.
+*Movies & albums* depends on the source data: Audius has no movie field, so it only fills up with songs whose titles name the movie (or that belong to an album).
+
 ## Songs stored in MySQL (downloads)
 
 - **Song details** (title, artist, artwork, release date) are fetched by the cron job and stored in MySQL. The app always reads them from the database, never from the music API.
@@ -74,10 +88,12 @@ All endpoints accept an `X-User-Id` header. The app generates a random id per de
 
 | Method & path | |
 |---|---|
-| `GET /api/songs?q=&downloaded=&page=&size=` | catalogue / search / downloaded only |
+| `GET /api/songs?q=&downloaded=&year=&artist=&movie=&page=&size=` | catalogue / search / songs of a folder |
+| `GET /api/browse/{years\|artists\|movies}` | folders with song count and cover image |
 | `GET /api/songs/new?limit=` | newest songs |
 | `GET /api/songs/stream` | SSE: `song-added`, `song-updated` (download progress) |
 | `GET /api/likes` · `PUT/DELETE /api/likes/{songId}` | liked songs |
+| `POST /api/likes/batch {songIds:[...], liked}` | like / unlike a whole folder |
 | `GET /api/history` · `POST /api/history {songId}` · `DELETE /api/history` | play history |
 | `POST /api/downloads {songIds:[...]}` · `POST/DELETE /api/songs/{id}/download` | store / remove audio in MySQL |
 | `GET /api/songs/{id}/audio` | play a downloaded song from MySQL (supports `Range`) |

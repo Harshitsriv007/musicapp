@@ -47,8 +47,22 @@ class LikeAndHistoryControllerTest {
     }
 
     @Test
+    void likeWholeFolder() throws Exception {
+        mvc.perform(post("/api/likes/batch").header("X-User-Id", "riya")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"songIds\":[1,2],\"liked\":true}"))
+                .andExpect(status().isNoContent());
+        verify(likeService).setLiked("riya", java.util.List.of(1L, 2L), true);
+    }
+
+    @Test
+    void likeBatchNeedsSongs() throws Exception {
+        mvc.perform(post("/api/likes/batch").contentType(MediaType.APPLICATION_JSON).content("{\"songIds\":[],\"liked\":true}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void recordPlayReturnsCreatedEntry() throws Exception {
-        var song = new SongDto(5L, "Kesariya", null, null, null, null, "s", null, null, "audius", null, false, "NONE");
+        var song = new SongDto(5L, "Kesariya", null, null, null, null, null, "s", null, null, "audius", null, false, "NONE");
         when(historyService.recordPlay("riya", 5L)).thenReturn(new HistoryEntryDto(1L, song, Instant.parse("2026-01-01T00:00:00Z")));
 
         mvc.perform(post("/api/history").header("X-User-Id", "riya")

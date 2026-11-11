@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { api } from '../api/client';
+import { DownloadAllButton } from '../components/DownloadButton';
+import { LikeAllButton } from '../components/LikeAllButton';
 import { SongList } from '../components/SongList';
+import { href } from '../lib/routes';
 import { useNewSongs } from '../hooks/useNewSongs';
 
 export function NewSongsView() {
@@ -20,6 +23,7 @@ export function NewSongsView() {
 
   return (
     <section aria-labelledby="new-heading">
+      <a className="back-link" href={href({ view: 'home' })}>← Home</a>
       <div className="view-head">
         <div>
           <h1 id="new-heading">New songs</h1>
@@ -31,6 +35,10 @@ export function NewSongsView() {
         <button type="button" className="btn" onClick={() => void checkNow()} disabled={checking}>
           {checking ? 'Checking…' : 'Check now'}
         </button>
+      </div>
+      <div className="folder-head__actions folder-head__actions--spaced">
+        <LikeAllButton songs={songs} />
+        <DownloadAllButton songs={songs} />
       </div>
       <SongList
         songs={songs}

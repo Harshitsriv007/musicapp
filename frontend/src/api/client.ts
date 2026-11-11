@@ -1,5 +1,5 @@
 import { getUserId } from '../lib/userId';
-import type { DownloadStatusEntry, HistoryEntry, LikedEntry, Page, Song } from './types';
+import type { DownloadStatusEntry, Folder, FolderType, HistoryEntry, LikedEntry, Page, Song, SongQuery } from './types';
 
 export const API_BASE: string = import.meta.env.VITE_API_BASE ?? '';
 
@@ -28,10 +28,18 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   newSongs: (limit = 50) => request<Song[]>(`/api/songs/new?limit=${limit}`),
-  songs: (q: string, page = 0, size = 30, downloaded = false) =>
-    request<Page<Song>>(
-      `/api/songs?page=${page}&size=${size}${q ? `&q=${encodeURIComponent(q)}` : ''}${downloaded ? '&downloaded=true' : ''}`,
-    ),
+  songs: (q: string, page = 0, size = 30, filter: SongQuery = {}) => {
+    const params = new URLSearchParams({ page: String(page), size: String(size) });
+    if (q) params.set('q', q);
+    if (filter.downloaded) params.set('downloaded', 'true');
+    if (filter.year) params.set('year', filter.year);
+    if (filter.artist) params.set('artist', filter.artist);
+    if (filter.movie) params.set('movie', filter.movie);
+    return request<Page<Song>>(`/api/songs?${params.toString().replace(/\+/g, '%20')}`);
+  },
+  browse: (type: FolderType) => request<Folder[]>(`/api/browse/${type}`),
+  likeBatch: (songIds: number[], liked: boolean) =>
+    request<void>('/api/likes/batch', { method: 'POST', body: JSON.stringify({ songIds, liked }) }),
   liked: (page = 0, size = 200) => request<Page<LikedEntry>>(`/api/likes?page=${page}&size=${size}`),
   like: (songId: number) => request<void>(`/api/likes/${songId}`, { method: 'PUT' }),
   unlike: (songId: number) => request<void>(`/api/likes/${songId}`, { method: 'DELETE' }),

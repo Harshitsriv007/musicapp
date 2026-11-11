@@ -49,10 +49,21 @@ describe('api client', () => {
     });
 
     await api.download([1, 2]);
-    await api.songs('', 0, 100, true);
+    await api.songs('', 0, 100, { downloaded: true });
 
     expect(fetchMock.mock.calls[0][1]!.body).toBe('{"songIds":[1,2]}');
     expect(String(fetchMock.mock.calls[1][0])).toBe('/api/songs?page=0&size=100&downloaded=true');
+  });
+
+  it('lists the songs of a folder and likes a whole folder', async () => {
+    const fetchMock = mockFetch({ 'GET /api/songs': { content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 } });
+
+    await api.songs('', 0, 100, { artist: 'Arijit Singh' });
+    await api.likeBatch([1, 2], true);
+
+    expect(String(fetchMock.mock.calls[0][0])).toBe('/api/songs?page=0&size=100&artist=Arijit%20Singh');
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/likes/batch');
+    expect(fetchMock.mock.calls[1][1]!.body).toBe('{"songIds":[1,2],"liked":true}');
   });
 
   it('throws ApiError on HTTP errors', async () => {

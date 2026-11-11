@@ -1,8 +1,10 @@
 package com.musicapp.web;
 
 import com.musicapp.service.LikeService;
+import com.musicapp.web.dto.LikeBatchRequest;
 import com.musicapp.web.dto.LikedSongDto;
 import com.musicapp.web.dto.PageResponse;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +12,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,6 +37,15 @@ public class LikeController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "50") @Min(1) @Max(200) int size) {
         return likeService.list(UserIds.require(userId), page, size);
+    }
+
+    /** Like / unlike a whole folder: {"songIds":[...], "liked": true|false}. */
+    @PostMapping("/batch")
+    public ResponseEntity<Void> batch(
+            @RequestHeader(name = UserIds.HEADER, defaultValue = UserIds.DEFAULT) String userId,
+            @Valid @RequestBody LikeBatchRequest request) {
+        likeService.setLiked(UserIds.require(userId), request.songIds(), request.liked());
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{songId}")

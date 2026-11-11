@@ -5,6 +5,8 @@ export interface Song {
   title: string;
   artist: string | null;
   album: string | null;
+  /** Movie (or album) the song belongs to, when known. */
+  movie: string | null;
   genre: string | null;
   imageUrl: string | null;
   streamUrl: string;
@@ -15,6 +17,24 @@ export interface Song {
   liked: boolean;
   /** DOWNLOADED = audio is stored in our MySQL and streams from our API. */
   downloadStatus: DownloadStatus;
+}
+
+export type FolderType = 'years' | 'artists' | 'movies';
+/** Query parameter used to list the songs inside a folder. */
+export type FolderFilter = 'year' | 'artist' | 'movie';
+
+export interface Folder {
+  key: string;
+  title: string;
+  songCount: number;
+  imageUrl: string | null;
+}
+
+export interface SongQuery {
+  downloaded?: boolean;
+  year?: string;
+  artist?: string;
+  movie?: string;
 }
 
 export interface DownloadStatusEntry {

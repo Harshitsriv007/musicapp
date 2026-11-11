@@ -5,6 +5,8 @@ import type { Song } from '../api/types';
 interface LikesApi {
   isLiked: (song: Song) => boolean;
   toggleLike: (song: Song) => Promise<void>;
+  /** Like or unlike many songs at once (a whole folder). */
+  setLikedMany: (songs: Song[], liked: boolean) => Promise<void>;
   /** Bumps whenever a like changes, so the Liked tab knows to reload. */
   version: number;
 }
@@ -41,7 +43,34 @@ export function LikesProvider({ children }: { children: ReactNode }) {
     [overrides],
   );
 
-  const value = useMemo(() => ({ isLiked, toggleLike, version }), [isLiked, toggleLike, version]);
+  const setLikedMany = useCallback(
+    async (songs: Song[], liked: boolean) => {
+      const changed = songs.filter((s) => (overrides.get(s.id) ?? s.liked) !== liked);
+      if (changed.length === 0) return;
+      const previous = new Map(changed.map((s) => [s.id, overrides.get(s.id) ?? s.liked]));
+      setOverrides((prev) => {
+        const next = new Map(prev);
+        changed.forEach((s) => next.set(s.id, liked));
+        return next;
+      });
+      try {
+        await api.likeBatch(changed.map((s) => s.id), liked);
+        setVersion((v) => v + 1);
+      } catch {
+        setOverrides((prev) => {
+          const next = new Map(prev);
+          previous.forEach((was, id) => next.set(id, was));
+          return next;
+        });
+      }
+    },
+    [overrides],
+  );
+
+  const value = useMemo(
+    () => ({ isLiked, toggleLike, setLikedMany, version }),
+    [isLiked, toggleLike, setLikedMany, version],
+  );
   return <LikesContext.Provider value={value}>{children}</LikesContext.Provider>;
 }
 

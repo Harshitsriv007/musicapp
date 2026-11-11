@@ -27,6 +27,7 @@ class AudiusMusicProviderTest {
                "release_date":"2022-07-17T00:00:00Z","created_at":"2022-07-18T10:00:00Z",
                "artwork":{"150x150":"https://img/150.jpg","480x480":"https://img/480.jpg","mirrors":["https://m"]},
                "user":{"name":"Arijit Singh","handle":"arijit"},"is_delete":false,"is_available":true,
+               "album_backlink":{"playlist_id":1,"playlist_name":"Brahmastra (Original Soundtrack)"},
                "extra_unknown_field":123},
               {"id":"DEL1","title":"Deleted","is_delete":true},
               {"id":"GATE1","title":"Premium only","is_stream_gated":true},
@@ -59,6 +60,7 @@ class AudiusMusicProviderTest {
         assertThat(kesariya.source()).isEqualTo("audius");
         assertThat(kesariya.title()).isEqualTo("Kesariya");
         assertThat(kesariya.artist()).isEqualTo("Arijit Singh");
+        assertThat(kesariya.album()).isEqualTo("Brahmastra (Original Soundtrack)");
         assertThat(kesariya.imageUrl()).isEqualTo("https://img/480.jpg");
         assertThat(kesariya.streamUrl()).isEqualTo("https://audius.test/v1/tracks/ANM13/stream?app_name=testapp");
         assertThat(kesariya.durationSeconds()).isEqualTo(268);

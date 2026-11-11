@@ -35,6 +35,9 @@ public class Song {
     private String album;
     private String genre;
 
+    /** Movie (or album) the song belongs to – see MovieExtractor. */
+    private String movie;
+
     @Column(name = "image_url", length = 1024)
     private String imageUrl;
 
@@ -96,6 +99,8 @@ public class Song {
     public String getAlbum() { return album; }
     public void setAlbum(String album) { this.album = album; }
     public String getGenre() { return genre; }
+    public String getMovie() { return movie; }
+    public void setMovie(String movie) { this.movie = movie; }
     public void setGenre(String genre) { this.genre = genre; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }

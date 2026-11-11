@@ -10,22 +10,24 @@ export interface FakeSong {
   releaseDate: string;
   source: string;
   album: null;
+  movie: string | null;
   genre: string;
   addedAt: string;
   liked: boolean;
   downloadStatus: 'NONE' | 'DOWNLOADED';
 }
 
-export const song = (id: number, title: string, artist = 'Arijit Singh'): FakeSong => ({
+export const song = (id: number, title: string, artist = 'Arijit Singh', releaseDate = '2024-01-01', movie: string | null = null): FakeSong => ({
   id,
   title,
   artist,
   imageUrl: null,
   streamUrl: `/media/${id}.wav`,
   durationSeconds: 2,
-  releaseDate: '2024-01-01',
+  releaseDate,
   source: 'audius',
   album: null,
+  movie,
   genre: 'Bollywood',
   addedAt: new Date().toISOString(),
   liked: false,
@@ -67,10 +69,32 @@ export async function fakeBackend(page: Page, initial: FakeSong[]) {
     if (method === 'GET' && path === '/api/songs') {
       const q = (url.searchParams.get('q') ?? '').toLowerCase();
       const onlyDownloaded = url.searchParams.get('downloaded') === 'true';
+      const year = url.searchParams.get('year');
+      const artist = url.searchParams.get('artist');
+      const movie = url.searchParams.get('movie');
       return json(route, pageOf(songs
         .filter((s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q))
         .filter((s) => !onlyDownloaded || downloaded.has(s.id))
+        .filter((s) => !year || s.releaseDate.startsWith(year))
+        .filter((s) => !artist || s.artist === artist)
+        .filter((s) => !movie || s.movie === movie)
         .map(view)));
+    }
+    const browseMatch = path.match(/^\/api\/browse\/(years|artists|movies)$/);
+    if (method === 'GET' && browseMatch) {
+      const keyOf = (s: FakeSong) =>
+        browseMatch[1] === 'years' ? s.releaseDate.slice(0, 4) : browseMatch[1] === 'artists' ? s.artist : s.movie;
+      const counts = new Map<string, number>();
+      songs.forEach((s) => { const k = keyOf(s); if (k) counts.set(k, (counts.get(k) ?? 0) + 1); });
+      const folders = [...counts.entries()]
+        .map(([key, songCount]) => ({ key, title: key, songCount, imageUrl: null }))
+        .sort((a, b) => (browseMatch[1] === 'years' ? b.key.localeCompare(a.key) : b.songCount - a.songCount || a.key.localeCompare(b.key)));
+      return json(route, folders);
+    }
+    if (method === 'POST' && path === '/api/likes/batch') {
+      const { songIds, liked: like } = req.postDataJSON() as { songIds: number[]; liked: boolean };
+      songIds.forEach((id) => (like ? liked.set(id, new Date().toISOString()) : liked.delete(id)));
+      return route.fulfill({ status: 204 });
     }
     if (method === 'POST' && path === '/api/downloads') {
       const { songIds } = req.postDataJSON() as { songIds: number[] };
