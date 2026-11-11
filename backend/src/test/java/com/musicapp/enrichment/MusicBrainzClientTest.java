@@ -73,6 +73,18 @@ class MusicBrainzClientTest {
     }
 
     @Test
+    void aBandNamedLikeTheSongIsNotTheArtist() {
+        // real case: "GOAT - Sidhu Moose Wala" matched a 2006 track by the band "Goat"
+        respond("GOAT", """
+                {"recordings":[
+                  {"title":"GOAT","score":98,"first-release-date":"2006-06-01","artist-credit":[{"name":"Don Chambers"},{"name":"Goat"}]},
+                  {"title":"GOAT","score":98,"first-release-date":"2021-05-15","artist-credit":[{"name":"Sidhu Moose Wala"}]}
+                ]}""");
+
+        assertThat(client.findOriginalReleaseDate("GOAT - Sidhu Moose Wala", "Punjabi Songs")).contains(LocalDate.of(2021, 5, 15));
+    }
+
+    @Test
     void lowScoresAndFutureDatesAreIgnored() {
         respond("Heeriye", """
                 {"recordings":[

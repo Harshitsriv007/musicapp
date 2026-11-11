@@ -50,13 +50,15 @@ public final class TitleCleaner {
         if (parts.isEmpty()) {
             return List.of();
         }
+        // Artist hints are the uploader and the *other* part of the title – never the song name being
+        // searched, or a band that happens to share the song's name ("GOAT" by Goat) would match.
         List<Candidate> result = new ArrayList<>();
         if (parts.size() == 1) {
-            result.add(new Candidate(parts.getFirst(), hints(uploader, rawTitle)));
+            result.add(new Candidate(parts.getFirst(), hints(uploader)));
         } else {
             // "Title - Artist" is the more common upload format; then "Artist - Title".
-            result.add(new Candidate(parts.get(0), hints(uploader, rawTitle, parts.get(1))));
-            result.add(new Candidate(parts.get(1), hints(uploader, rawTitle, parts.get(0))));
+            result.add(new Candidate(parts.get(0), hints(uploader, parts.get(1))));
+            result.add(new Candidate(parts.get(1), hints(uploader, parts.get(0))));
         }
         return result;
     }

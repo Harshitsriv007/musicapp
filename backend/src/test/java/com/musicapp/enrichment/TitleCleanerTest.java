@@ -24,7 +24,7 @@ class TitleCleanerTest {
     @Test
     void plainTitleUsesUploaderAndTitleAsArtistHints() {
         assertThat(TitleCleaner.candidates("Tum Hi Ho (Official Video)", "Arijit Singh"))
-                .containsExactly(new TitleCleaner.Candidate("Tum Hi Ho", List.of("Arijit Singh", "Tum Hi Ho (Official Video)")));
+                .containsExactly(new TitleCleaner.Candidate("Tum Hi Ho", List.of("Arijit Singh")));
     }
 
     @Test

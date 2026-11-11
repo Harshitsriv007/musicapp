@@ -59,6 +59,8 @@ public class MusicBrainzClient {
     private Optional<LocalDate> lookup(TitleCleaner.Candidate candidate) {
         String wanted = TitleCleaner.normalize(candidate.title());
         List<String> hints = candidate.artistHints().stream().map(TitleCleaner::normalize).toList();
+        // An "artist" with the song's own name is a different act (e.g. the band "Goat" for the song "GOAT").
+        java.util.function.Predicate<String> notTheTitle = a -> !a.equals(wanted);
         Response response = search("recording:\"" + escape(candidate.title()) + "\"");
         if (response == null || response.recordings() == null) {
             return Optional.empty();
@@ -67,7 +69,7 @@ public class MusicBrainzClient {
         return response.recordings().stream()
                 .filter(r -> r.score() >= MIN_SCORE)
                 .filter(r -> TitleCleaner.normalize(r.title()).equals(wanted))
-                .filter(r -> r.artistNames().stream().map(TitleCleaner::normalize).anyMatch(a -> matchesAny(a, hints)))
+                .filter(r -> r.artistNames().stream().map(TitleCleaner::normalize).filter(notTheTitle).anyMatch(a -> matchesAny(a, hints)))
                 .map(r -> parseDate(r.firstReleaseDate()))
                 .filter(Objects::nonNull)
                 .filter(d -> !d.isAfter(today))
