@@ -4,6 +4,7 @@ import { formatDuration } from '../lib/format';
 import { useDownloads } from '../hooks/DownloadsContext';
 import { usePlayer } from '../player/PlayerContext';
 import { Artwork } from './Artwork';
+import { ErrorState } from './ErrorState';
 import { DownloadButton } from './DownloadButton';
 import { LikeButton } from './LikeButton';
 
@@ -32,7 +33,7 @@ export function SongList({ songs, loading, error, empty, meta, badge, rowKey }: 
       </ul>
     );
   }
-  if (error && songs.length === 0) return <p className="state state--error" role="alert">{error}</p>;
+  if (error && songs.length === 0) return <ErrorState message={error} />;
   if (songs.length === 0) return <div className="state">{empty ?? 'No songs yet.'}</div>;
 
   // The queue never contains duplicates, so "next" behaves predictably from history lists.
@@ -68,7 +69,7 @@ export function SongList({ songs, loading, error, empty, meta, badge, rowKey }: 
               </div>
               <div className="song-row__text">
                 <span className="song-row__title">
-                  {song.title}
+                  <span className="song-row__title-text">{song.title}</span>
                   {badge?.(song)}
                 </span>
                 <span className="song-row__sub">

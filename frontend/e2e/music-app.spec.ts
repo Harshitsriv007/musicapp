@@ -232,3 +232,28 @@ test.describe('Listener journeys', () => {
     expect(manifest.icons.map((i: { sizes: string }) => i.sizes)).toEqual(expect.arrayContaining(['192x192', '512x512']));
   });
 });
+
+test.describe('Accounts', () => {
+  test('the login page comes first, and logging in opens the app', async ({ page }) => {
+    await fakeBackend(page, catalogue, { loggedIn: false });
+    await page.goto('/');
+
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Sections' })).toHaveCount(0);
+
+    await page.getByLabel('Username', { exact: true }).fill('riya');
+    await page.getByLabel('Password', { exact: true }).fill('wrong-pass');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page.getByRole('alert')).toHaveText('Wrong username or password');
+
+    await page.getByLabel('Password', { exact: true }).fill('secret-123');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page.getByRole('heading', { name: 'Welcome back, riya' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Play .* by / }).first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Account: riya' }).click();
+    await page.getByRole('button', { name: 'Log out' }).click();
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+  });
+});
+

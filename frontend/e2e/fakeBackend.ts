@@ -60,8 +60,17 @@ function silentWav(seconds = 2, rate = 8000): Buffer {
 }
 
 /** In-memory stand-in for the Spring Boot API, so browser tests are deterministic. */
-export async function fakeBackend(page: Page, initial: FakeSong[]) {
+export async function fakeBackend(page: Page, initial: FakeSong[], { loggedIn = true } = {}) {
   const songs = [...initial];
+  // The app shows the login page first; most journeys start already logged in.
+  if (loggedIn) {
+    await page.addInitScript(() => {
+      if (!sessionStorage.getItem('e2e.seeded')) {
+        sessionStorage.setItem('e2e.seeded', '1');
+        localStorage.setItem('dhun.session', JSON.stringify({ token: 'e2e-token', username: 'riya' }));
+      }
+    });
+  }
   const liked = new Map<number, string>();
   const history: { id: number; songId: number; playedAt: string }[] = [];
   const downloaded = new Set<number>();
@@ -79,6 +88,12 @@ export async function fakeBackend(page: Page, initial: FakeSong[]) {
     const path = url.pathname;
     const method = req.method();
 
+    if (method === 'POST' && (path === '/api/auth/login' || path === '/api/auth/signup')) {
+      const { username, password } = JSON.parse(req.postData() ?? '{}') as { username: string; password: string };
+      if (password !== 'secret-123') return json(route, { detail: 'Wrong username or password' }, 401);
+      return json(route, { token: `token-${username}`, username }, path.endsWith('signup') ? 201 : 200);
+    }
+    if (method === 'POST' && path === '/api/auth/logout') return route.fulfill({ status: 204 });
     if (method === 'GET' && path === '/api/songs/new') return json(route, songs.map(view));
     if (method === 'GET' && path === '/api/songs') {
       const q = (url.searchParams.get('q') ?? '').toLowerCase();

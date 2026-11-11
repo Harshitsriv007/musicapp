@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { Folder, FolderType } from '../api/types';
+import { ErrorState } from '../components/ErrorState';
 import { FolderCard } from '../components/FolderCard';
 import { FILTER_OF, href } from '../lib/routes';
 
@@ -45,7 +46,7 @@ export function FoldersView({ type }: { type: FolderType }) {
           onChange={(e) => setFilter(e.target.value)}
         />
       )}
-      {error && <p className="state state--error" role="alert">{error}</p>}
+      {error && <ErrorState message={error} />}
       {!folders && !error && <p className="state">Loading…</p>}
       {folders && shown.length === 0 && <p className="state">No folders here yet.</p>}
       <div className="folder-grid">
