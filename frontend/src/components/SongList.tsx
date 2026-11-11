@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
 import type { Song } from '../api/types';
 import { formatDuration } from '../lib/format';
+import { useDownloads } from '../hooks/DownloadsContext';
 import { usePlayer } from '../player/PlayerContext';
 import { Artwork } from './Artwork';
+import { DownloadButton } from './DownloadButton';
 import { LikeButton } from './LikeButton';
 
 interface Props {
@@ -19,6 +21,7 @@ interface Props {
 
 export function SongList({ songs, loading, error, empty, meta, badge, rowKey }: Props) {
   const player = usePlayer();
+  const { withStatus } = useDownloads();
 
   if (loading && songs.length === 0) {
     return (
@@ -33,7 +36,8 @@ export function SongList({ songs, loading, error, empty, meta, badge, rowKey }: 
   if (songs.length === 0) return <div className="state">{empty ?? 'No songs yet.'}</div>;
 
   // The queue never contains duplicates, so "next" behaves predictably from history lists.
-  const queue = songs.filter((s, i) => songs.findIndex((o) => o.id === s.id) === i);
+  // Each song carries its latest download status so downloaded songs play from our own DB.
+  const queue = songs.filter((s, i) => songs.findIndex((o) => o.id === s.id) === i).map(withStatus);
 
   return (
     <ul className="song-list">
@@ -47,11 +51,12 @@ export function SongList({ songs, loading, error, empty, meta, badge, rowKey }: 
               className={`song-row${active ? ' song-row--active' : ''}`}
               aria-current={active ? 'true' : undefined}
               aria-label={`Play ${song.title}${song.artist ? ` by ${song.artist}` : ''}`}
-              onClick={() => (active ? player.togglePlay() : player.playSong(song, queue))}
+              onClick={() => (active ? player.togglePlay() : player.playSong(withStatus(song), queue))}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  active ? player.togglePlay() : player.playSong(song, queue);
+                  if (active) player.togglePlay();
+                  else player.playSong(withStatus(song), queue);
                 }
               }}
             >
@@ -73,6 +78,7 @@ export function SongList({ songs, loading, error, empty, meta, badge, rowKey }: 
               </div>
               <span className="song-row__duration">{formatDuration(song.durationSeconds)}</span>
               <LikeButton song={song} />
+              <DownloadButton song={song} />
             </div>
           </li>
         );

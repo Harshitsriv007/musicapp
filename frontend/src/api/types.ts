@@ -1,3 +1,5 @@
+export type DownloadStatus = 'NONE' | 'PENDING' | 'DOWNLOADING' | 'DOWNLOADED' | 'FAILED';
+
 export interface Song {
   id: number;
   title: string;
@@ -11,6 +13,13 @@ export interface Song {
   source: string;
   addedAt: string | null;
   liked: boolean;
+  /** DOWNLOADED = audio is stored in our MySQL and streams from our API. */
+  downloadStatus: DownloadStatus;
+}
+
+export interface DownloadStatusEntry {
+  songId: number;
+  downloadStatus: DownloadStatus;
 }
 
 export interface Page<T> {

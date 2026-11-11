@@ -8,7 +8,8 @@ services:
       MYSQL_USER: musicapp
       MYSQL_PASSWORD: ${DB_PASSWORD:-musicapp}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass}
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    # max_allowed_packet: downloaded audio is stored as 1 MiB BLOB chunks
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--max_allowed_packet=64M"]
     ports:
       - "3306:3306"
     volumes:
@@ -64,6 +65,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-musicapp}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       INGESTION_CRON: ${INGESTION_CRON:-0 */15 * * * *}
+      INGESTION_RUN_ON_STARTUP: ${INGESTION_RUN_ON_STARTUP:-true}
+      AUTO_DOWNLOAD_ON_PLAY: ${AUTO_DOWNLOAD_ON_PLAY:-true}
+      DOWNLOAD_MAX_BYTES: ${DOWNLOAD_MAX_BYTES:-104857600}
       INGESTION_QUERIES: ${INGESTION_QUERIES:-bollywood,hindi songs,arijit singh,bollywood romantic,punjabi}
       JAMENDO_ENABLED: ${JAMENDO_ENABLED:-false}
       JAMENDO_CLIENT_ID: ${JAMENDO_CLIENT_ID:-}
@@ -85,6 +89,38 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Toolbox container: `make dkr-sh` opens a shell here. JDK 21, Node 22, Playwright browsers,
+  # make. Every `make` target runs the same inside this container, on the host and in CI.
+  dev:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: docker/dev/Dockerfile
+    working_dir: /workspace
+    environment:
+      IN_CONTAINER: "1"
+      DB_URL: jdbc:mysql://mysql:3306/musicapp?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+      DB_USER: musicapp
+      DB_PASSWORD: ${DB_PASSWORD:-musicapp}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      API_PROXY_TARGET: http://backend:8080
+      SERVER_PORT: "8081"
+      # Testcontainers (acceptance tests) starts sibling containers through the host's Docker.
+      TESTCONTAINERS_HOST_OVERRIDE: host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "5173:5173"   # make run-frontend
+      - "8081:8081"   # make run-backend
+    volumes:
+      - .:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+      - maven-repo:/root/.m2
+      # Linux node_modules kept apart from the host's (native binaries differ per OS).
+      - frontend-node-modules:/workspace/frontend/node_modules
+
 volumes:
   mysql-data:
   kafka-data:
+  maven-repo:
+  frontend-node-modules:

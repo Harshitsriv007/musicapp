@@ -50,7 +50,7 @@ class JamendoMusicProviderTest {
         var props = new AppProperties(base.ingestion(), base.kafka(),
                 new AppProperties.Providers(base.providers().audius(),
                         new AppProperties.Jamendo(true, "https://jamendo.test", "", "bollywood")),
-                base.cors());
+                base.cors(), base.download());
         var provider = new JamendoMusicProvider(RestClient.builder(), props);
 
         assertThatThrownBy(provider::fetchLatest).isInstanceOf(IllegalStateException.class);

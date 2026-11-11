@@ -40,7 +40,9 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
-    proxy: { '/api': { target: 'http://localhost:8080', changeOrigin: true } },
+    host: true,
+    // In the dev container the API is reachable as http://backend:8080 (set by docker-compose).
+    proxy: { '/api': { target: process.env.API_PROXY_TARGET ?? 'http://localhost:8080', changeOrigin: true } },
   },
   test: {
     globals: true,

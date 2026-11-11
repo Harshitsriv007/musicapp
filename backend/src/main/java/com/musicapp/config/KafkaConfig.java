@@ -14,6 +14,8 @@ import org.springframework.util.backoff.FixedBackOff;
 @Configuration
 public class KafkaConfig {
 
+    static final String DLT_SUFFIX = ".DLT";
+
     @Bean
     NewTopic songsTopic(AppProperties props) {
         return TopicBuilder.name(props.kafka().songsTopic())
@@ -24,7 +26,23 @@ public class KafkaConfig {
 
     @Bean
     NewTopic songsDeadLetterTopic(AppProperties props) {
-        return TopicBuilder.name(props.kafka().deadLetterTopic())
+        return TopicBuilder.name(props.kafka().songsTopic() + DLT_SUFFIX)
+                .partitions(props.kafka().partitions())
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    NewTopic downloadsTopic(AppProperties props) {
+        return TopicBuilder.name(props.kafka().downloadsTopic())
+                .partitions(props.kafka().partitions())
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    NewTopic downloadsDeadLetterTopic(AppProperties props) {
+        return TopicBuilder.name(props.kafka().downloadsTopic() + DLT_SUFFIX)
                 .partitions(props.kafka().partitions())
                 .replicas(1)
                 .build();
@@ -35,10 +53,10 @@ public class KafkaConfig {
      * bad message never blocks the partition. Invalid payloads skip the retries.
      */
     @Bean
-    CommonErrorHandler kafkaErrorHandler(KafkaOperations<Object, Object> kafkaOperations, AppProperties props) {
+    CommonErrorHandler kafkaErrorHandler(KafkaOperations<Object, Object> kafkaOperations) {
         var recoverer = new DeadLetterPublishingRecoverer(kafkaOperations,
                 (record, ex) -> new org.apache.kafka.common.TopicPartition(
-                        props.kafka().deadLetterTopic(), record.partition()));
+                        record.topic() + DLT_SUFFIX, record.partition()));
         var handler = new DefaultErrorHandler(recoverer, new FixedBackOff(1_000L, 3));
         handler.addNotRetryableExceptions(InvalidSongEventException.class);
         return handler;

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mockFetch, song } from '../test/fakes';
-import { api, ApiError } from './client';
+import { api, ApiError, audioUrl } from './client';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -35,6 +35,24 @@ describe('api client', () => {
       'PUT /api/likes/5',
       'DELETE /api/likes/5',
     ]);
+  });
+
+  it('plays downloaded songs from our own API and others from the source', () => {
+    expect(audioUrl(song(4, 'A', { downloadStatus: 'DOWNLOADED' }))).toBe('/api/songs/4/audio');
+    expect(audioUrl(song(5, 'B'))).toBe('https://stream.test/5');
+  });
+
+  it('requests downloads in bulk and filters downloaded songs', async () => {
+    const fetchMock = mockFetch({
+      'POST /api/downloads': [{ songId: 1, downloadStatus: 'PENDING' }],
+      'GET /api/songs': { content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 },
+    });
+
+    await api.download([1, 2]);
+    await api.songs('', 0, 100, true);
+
+    expect(fetchMock.mock.calls[0][1]!.body).toBe('{"songIds":[1,2]}');
+    expect(String(fetchMock.mock.calls[1][0])).toBe('/api/songs?page=0&size=100&downloaded=true');
   });
 
   it('throws ApiError on HTTP errors', async () => {

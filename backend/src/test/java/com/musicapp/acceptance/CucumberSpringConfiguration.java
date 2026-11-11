@@ -23,7 +23,9 @@ public class CucumberSpringConfiguration {
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.4")
             .withDatabaseName("musicapp")
             .withUsername("musicapp")
-            .withPassword("musicapp");
+            .withPassword("musicapp")
+            // audio is stored as 1 MiB BLOB chunks (same setting as docker-compose)
+            .withCommand("--max_allowed_packet=64M");
 
     static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:3.8.0");
 

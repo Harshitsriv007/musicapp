@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { Song } from '../api/types';
+import { DownloadAllButton } from '../components/DownloadButton';
 import { SongList } from '../components/SongList';
 
 const PAGE_SIZE = 30;
@@ -43,6 +44,7 @@ export function LibraryView() {
     <section aria-labelledby="library-heading">
       <div className="view-head">
         <h1 id="library-heading">All songs</h1>
+        <DownloadAllButton songs={songs} />
       </div>
       <input
         className="search"

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { LikedEntry } from '../api/types';
+import { DownloadAllButton } from '../components/DownloadButton';
 import { SongList } from '../components/SongList';
 import { useLikes } from '../hooks/LikesContext';
 
@@ -29,6 +30,7 @@ export function LikedView() {
           <h1 id="liked-heading">Liked songs</h1>
           <p className="view-head__sub">{entries.length} {entries.length === 1 ? 'song' : 'songs'}</p>
         </div>
+        <DownloadAllButton songs={entries.map((e) => e.song)} />
       </div>
       <SongList
         songs={entries.map((e) => e.song)}

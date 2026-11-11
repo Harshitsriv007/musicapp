@@ -13,6 +13,7 @@ export interface FakeSong {
   genre: string;
   addedAt: string;
   liked: boolean;
+  downloadStatus: 'NONE' | 'DOWNLOADED';
 }
 
 export const song = (id: number, title: string, artist = 'Arijit Singh'): FakeSong => ({
@@ -28,6 +29,7 @@ export const song = (id: number, title: string, artist = 'Arijit Singh'): FakeSo
   genre: 'Bollywood',
   addedAt: new Date().toISOString(),
   liked: false,
+  downloadStatus: 'NONE',
 });
 
 /** 2 seconds of silence – a real, playable audio file for the browser. */
@@ -46,7 +48,9 @@ export async function fakeBackend(page: Page, initial: FakeSong[]) {
   const songs = [...initial];
   const liked = new Map<number, string>();
   const history: { id: number; songId: number; playedAt: string }[] = [];
-  const view = (s: FakeSong) => ({ ...s, liked: liked.has(s.id) });
+  const downloaded = new Set<number>();
+  const audioServedFromDb: number[] = [];
+  const view = (s: FakeSong) => ({ ...s, liked: liked.has(s.id), downloadStatus: downloaded.has(s.id) ? 'DOWNLOADED' : 'NONE' });
   const json = (route: Route, body: unknown, status = 200) =>
     route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
   const pageOf = <T>(content: T[]) => ({ content, page: 0, size: content.length, totalElements: content.length, totalPages: 1 });
@@ -62,7 +66,23 @@ export async function fakeBackend(page: Page, initial: FakeSong[]) {
     if (method === 'GET' && path === '/api/songs/new') return json(route, songs.map(view));
     if (method === 'GET' && path === '/api/songs') {
       const q = (url.searchParams.get('q') ?? '').toLowerCase();
-      return json(route, pageOf(songs.filter((s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)).map(view)));
+      const onlyDownloaded = url.searchParams.get('downloaded') === 'true';
+      return json(route, pageOf(songs
+        .filter((s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q))
+        .filter((s) => !onlyDownloaded || downloaded.has(s.id))
+        .map(view)));
+    }
+    if (method === 'POST' && path === '/api/downloads') {
+      const { songIds } = req.postDataJSON() as { songIds: number[] };
+      songIds.forEach((id) => downloaded.add(id)); // instant "download" in the fake
+      return json(route, songIds.map((songId) => ({ songId, downloadStatus: 'DOWNLOADED' })), 202);
+    }
+    const downloadMatch = path.match(/^\/api\/songs\/(\d+)\/download$/);
+    if (downloadMatch && method === 'DELETE') { downloaded.delete(Number(downloadMatch[1])); return route.fulfill({ status: 204 }); }
+    const audioMatch = path.match(/^\/api\/songs\/(\d+)\/audio$/);
+    if (audioMatch && method === 'GET' && downloaded.has(Number(audioMatch[1]))) {
+      audioServedFromDb.push(Number(audioMatch[1]));
+      return route.fulfill({ contentType: 'audio/wav', body: silentWav() });
     }
     const likeMatch = path.match(/^\/api\/likes\/(\d+)$/);
     if (likeMatch && method === 'PUT') { liked.set(Number(likeMatch[1]), new Date().toISOString()); return route.fulfill({ status: 204 }); }
@@ -89,5 +109,6 @@ export async function fakeBackend(page: Page, initial: FakeSong[]) {
     /** Simulates the cron job + Kafka consumer adding a song (picked up by the REST poll / refresh). */
     addSong: (s: FakeSong) => songs.unshift(s),
     history,
+    audioServedFromDb,
   };
 }

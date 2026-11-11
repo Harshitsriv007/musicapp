@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** Strongly typed view of the {@code musicapp.*} configuration tree. */
 @ConfigurationProperties(prefix = "musicapp")
-public record AppProperties(Ingestion ingestion, Kafka kafka, Providers providers, Cors cors) {
+public record AppProperties(Ingestion ingestion, Kafka kafka, Providers providers, Cors cors, Download download) {
 
     /**
      * @param cron          Spring cron for the scheduled fetch ("-" disables it)
@@ -20,9 +20,15 @@ public record AppProperties(Ingestion ingestion, Kafka kafka, Providers provider
         }
     }
 
-    public record Kafka(String songsTopic, int partitions) {
-        public String deadLetterTopic() {
-            return songsTopic + ".DLT";
+    public record Kafka(String songsTopic, String downloadsTopic, int partitions) {}
+
+    /**
+     * @param maxBytes   largest audio file we are willing to store per song
+     * @param autoOnPlay store every song the first time someone plays it, so later plays come from our DB
+     */
+    public record Download(long maxBytes, boolean autoOnPlay) {
+        public Download {
+            maxBytes = maxBytes <= 0 ? 100L * 1024 * 1024 : maxBytes;
         }
     }
 

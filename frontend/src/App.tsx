@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { DownloadsProvider } from './hooks/DownloadsContext';
 import { LikesProvider } from './hooks/LikesContext';
 import { MiniPlayer } from './player/MiniPlayer';
 import { PlayerProvider } from './player/PlayerContext';
+import { DownloadsView } from './views/DownloadsView';
 import { HistoryView } from './views/HistoryView';
 import { LibraryView } from './views/LibraryView';
 import { LikedView } from './views/LikedView';
@@ -11,6 +13,7 @@ const TABS = [
   { id: 'new', label: 'New' },
   { id: 'library', label: 'All songs' },
   { id: 'liked', label: 'Liked' },
+  { id: 'downloads', label: 'Downloads' },
   { id: 'history', label: 'History' },
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
@@ -32,6 +35,7 @@ export default function App() {
 
   return (
     <LikesProvider>
+      <DownloadsProvider>
       <PlayerProvider onPlayRecorded={() => setHistoryVersion((v) => v + 1)}>
         <div className="app">
           <header className="topbar">
@@ -56,11 +60,13 @@ export default function App() {
             {tab === 'new' && <NewSongsView />}
             {tab === 'library' && <LibraryView />}
             {tab === 'liked' && <LikedView />}
+            {tab === 'downloads' && <DownloadsView />}
             {tab === 'history' && <HistoryView version={historyVersion} />}
           </main>
           <MiniPlayer />
         </div>
       </PlayerProvider>
+      </DownloadsProvider>
     </LikesProvider>
   );
 }

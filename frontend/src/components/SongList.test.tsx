@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { DownloadsProvider } from '../hooks/DownloadsContext';
 import { LikesProvider } from '../hooks/LikesContext';
 import { PlayerProvider } from '../player/PlayerContext';
 import { FakeAudio, mockFetch, song } from '../test/fakes';
@@ -12,9 +13,11 @@ function renderList(songs = [song(1, 'Tum Hi Ho'), song(2, 'Kesariya', { liked: 
   const audio = new FakeAudio();
   render(
     <LikesProvider>
+      <DownloadsProvider>
       <PlayerProvider audioFactory={() => audio.asElement()}>
         <SongList songs={songs} />
       </PlayerProvider>
+      </DownloadsProvider>
     </LikesProvider>,
   );
   return audio;

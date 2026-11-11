@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.musicapp.domain.PlayHistory;
+import com.musicapp.download.SongPlayedEvent;
 import com.musicapp.repository.LikedSongRepository;
 import com.musicapp.repository.PlayHistoryRepository;
 import com.musicapp.repository.SongRepository;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
@@ -30,7 +32,8 @@ class HistoryServiceTest {
     private final PlayHistoryRepository history = mock(PlayHistoryRepository.class);
     private final SongRepository songs = mock(SongRepository.class);
     private final LikedSongRepository likes = mock(LikedSongRepository.class);
-    private final HistoryService service = new HistoryService(history, songs, likes, Clock.fixed(NOW, ZoneOffset.UTC));
+    private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    private final HistoryService service = new HistoryService(history, songs, likes, Clock.fixed(NOW, ZoneOffset.UTC), events);
 
     @Test
     void recordPlayStoresEntryWithCurrentTime() {
@@ -41,6 +44,7 @@ class HistoryServiceTest {
 
         assertThat(entry.playedAt()).isEqualTo(NOW);
         assertThat(entry.song().title()).isEqualTo("Kesariya");
+        verify(events).publishEvent(new SongPlayedEvent(1L));
     }
 
     @Test

@@ -2,6 +2,8 @@ package com.musicapp.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -44,6 +46,22 @@ public class Song {
 
     @Column(name = "release_date")
     private LocalDate releaseDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "download_status", nullable = false, length = 16)
+    private DownloadStatus downloadStatus = DownloadStatus.NONE;
+
+    @Column(name = "audio_content_type", length = 64)
+    private String audioContentType;
+
+    @Column(name = "audio_size")
+    private Long audioSize;
+
+    @Column(name = "downloaded_at")
+    private Instant downloadedAt;
+
+    @Column(name = "download_error", length = 512)
+    private String downloadError;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -89,6 +107,45 @@ public class Song {
     public void setReleaseDate(LocalDate releaseDate) { this.releaseDate = releaseDate; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    public DownloadStatus getDownloadStatus() { return downloadStatus; }
+    public String getAudioContentType() { return audioContentType; }
+    public Long getAudioSize() { return audioSize; }
+    public Instant getDownloadedAt() { return downloadedAt; }
+    public String getDownloadError() { return downloadError; }
+
+    public void markPending() {
+        downloadStatus = DownloadStatus.PENDING;
+        downloadError = null;
+    }
+
+    public void markDownloading() {
+        downloadStatus = DownloadStatus.DOWNLOADING;
+    }
+
+    public void markDownloaded(String contentType, long size, Instant at) {
+        downloadStatus = DownloadStatus.DOWNLOADED;
+        audioContentType = contentType;
+        audioSize = size;
+        downloadedAt = at;
+        downloadError = null;
+    }
+
+    public void markFailed(String error) {
+        downloadStatus = DownloadStatus.FAILED;
+        audioContentType = null;
+        audioSize = null;
+        downloadedAt = null;
+        downloadError = error == null ? "unknown error" : error.substring(0, Math.min(error.length(), 512));
+    }
+
+    public void clearDownload() {
+        downloadStatus = DownloadStatus.NONE;
+        audioContentType = null;
+        audioSize = null;
+        downloadedAt = null;
+        downloadError = null;
+    }
 
     /** Test helper: entities are normally given ids by the database. */
     public Song withId(Long id) {

@@ -2,6 +2,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DownloadsProvider } from '../hooks/DownloadsContext';
 import { LikesProvider } from '../hooks/LikesContext';
 import { FakeAudio, mockFetch, song } from '../test/fakes';
 import { MiniPlayer } from './MiniPlayer';
@@ -21,10 +22,12 @@ function renderMiniPlayer() {
   }
   render(
     <LikesProvider>
+      <DownloadsProvider>
       <PlayerProvider audioFactory={() => audio.asElement()}>
         <Capture />
         <MiniPlayer />
       </PlayerProvider>
+      </DownloadsProvider>
     </LikesProvider>,
   );
   return { audio, ref };

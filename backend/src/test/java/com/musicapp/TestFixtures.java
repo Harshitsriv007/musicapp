@@ -13,11 +13,12 @@ public final class TestFixtures {
     public static AppProperties props(String audiusUrl, List<String> queries) {
         return new AppProperties(
                 new AppProperties.Ingestion("-", false, queries, 10),
-                new AppProperties.Kafka("music.songs.discovered", 1),
+                new AppProperties.Kafka("music.songs.discovered", "music.songs.download-requested", 1),
                 new AppProperties.Providers(
                         new AppProperties.Audius(true, audiusUrl, "testapp"),
                         new AppProperties.Jamendo(true, "https://jamendo.test", "cid", "bollywood")),
-                new AppProperties.Cors(List.of("*")));
+                new AppProperties.Cors(List.of("*")),
+                new AppProperties.Download(10_000, true));
     }
 
     public static SongEvent event(String id, String title) {

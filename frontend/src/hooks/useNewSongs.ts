@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
+import { onLiveChange, subscribe } from '../lib/liveEvents';
 import type { Song } from '../api/types';
 
 export interface NewSongsState {
@@ -52,22 +53,16 @@ export function useNewSongs(pollMs = 60_000, limit = 50): NewSongsState {
     };
   }, [refresh, pollMs]);
 
-  useEffect(() => {
-    if (typeof EventSource === 'undefined') return;
-    const source = new EventSource(api.songStreamUrl());
-    source.onopen = () => setLive(true);
-    source.onerror = () => setLive(false); // browser reconnects automatically
-    source.addEventListener('song-added', (event) => {
-      try {
-        const song = JSON.parse((event as MessageEvent<string>).data) as Song;
+  useEffect(() => onLiveChange(setLive), []);
+
+  useEffect(
+    () =>
+      subscribe<Song>('song-added', (song) => {
         setSongs((prev) => (prev.some((s) => s.id === song.id) ? prev : [song, ...prev].slice(0, limit)));
         setFreshIds((prev) => new Set(prev).add(song.id));
-      } catch {
-        /* ignore malformed event */
-      }
-    });
-    return () => source.close();
-  }, [limit]);
+      }),
+    [limit],
+  );
 
   return { songs, loading, error, freshIds, live, refresh };
 }

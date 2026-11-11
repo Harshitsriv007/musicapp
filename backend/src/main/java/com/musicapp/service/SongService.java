@@ -1,5 +1,6 @@
 package com.musicapp.service;
 
+import com.musicapp.domain.DownloadStatus;
 import com.musicapp.domain.Song;
 import com.musicapp.ingestion.SongEvent;
 import com.musicapp.repository.LikedSongRepository;
@@ -58,11 +59,10 @@ public class SongService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<SongDto> list(String userId, String query, int page, int size) {
+    public PageResponse<SongDto> list(String userId, String query, boolean downloadedOnly, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, NEWEST_FIRST);
-        Page<Song> result = (query == null || query.isBlank())
-                ? songs.findAll(pageable)
-                : songs.search(query.strip(), pageable);
+        String q = (query == null || query.isBlank()) ? null : query.strip();
+        Page<Song> result = songs.findFiltered(q, downloadedOnly ? DownloadStatus.DOWNLOADED : null, pageable);
         return PageResponse.of(result, list -> toDtos(userId, list));
     }
 

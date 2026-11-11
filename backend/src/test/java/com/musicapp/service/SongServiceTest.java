@@ -7,10 +7,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.musicapp.domain.DownloadStatus;
 import com.musicapp.domain.Song;
 import com.musicapp.repository.LikedSongRepository;
 import com.musicapp.repository.SongRepository;
@@ -67,6 +69,18 @@ class SongServiceTest {
     }
 
     @Test
+    void downloadedSongsAreStreamedFromOurOwnApi() {
+        Song s = song(7, "Kesariya");
+        s.markDownloaded("audio/mpeg", 100, java.time.Instant.now());
+
+        SongDto dto = SongDto.from(s, false);
+
+        assertThat(dto.streamUrl()).isEqualTo("/api/songs/7/audio");
+        assertThat(dto.downloadStatus()).isEqualTo("DOWNLOADED");
+        assertThat(SongDto.from(song(8, "X"), false).streamUrl()).isEqualTo("https://stream/8");
+    }
+
+    @Test
     void newestMarksLikedSongsForTheUser() {
         when(songs.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(song(1, "A"), song(2, "B"))));
         when(likes.findLikedSongIds(eq("riya"), anyCollection())).thenReturn(Set.of(2L));
@@ -79,13 +93,22 @@ class SongServiceTest {
 
     @Test
     void listUsesSearchWhenQueryGiven() {
-        when(songs.search(eq("arijit"), any())).thenReturn(new PageImpl<>(List.of(song(1, "A"))));
+        when(songs.findFiltered(eq("arijit"), isNull(), any())).thenReturn(new PageImpl<>(List.of(song(1, "A"))));
         when(likes.findLikedSongIds(any(), anyCollection())).thenReturn(Set.of());
 
-        var page = service.list("riya", "  arijit ", 0, 10);
+        var page = service.list("riya", "  arijit ", false, 0, 10);
 
         assertThat(page.content()).hasSize(1);
-        verify(songs).search(eq("arijit"), any());
+        verify(songs).findFiltered(eq("arijit"), isNull(), any());
+    }
+
+    @Test
+    void listCanBeRestrictedToDownloadedSongs() {
+        when(songs.findFiltered(isNull(), eq(DownloadStatus.DOWNLOADED), any())).thenReturn(new PageImpl<>(List.of()));
+
+        service.list("riya", " ", true, 0, 10);
+
+        verify(songs).findFiltered(isNull(), eq(DownloadStatus.DOWNLOADED), any());
     }
 
     @Test

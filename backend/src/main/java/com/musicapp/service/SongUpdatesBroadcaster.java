@@ -34,6 +34,11 @@ public class SongUpdatesBroadcaster {
         emitters.forEach(e -> send(e, SseEmitter.event().name("song-added").id(String.valueOf(song.id())).data(song)));
     }
 
+    /** A song changed (e.g. its download finished) – clients refresh its state. */
+    public void songUpdated(SongDto song) {
+        emitters.forEach(e -> send(e, SseEmitter.event().name("song-updated").data(song)));
+    }
+
     /** Keeps idle connections alive through proxies (nginx, mobile carriers). */
     @Scheduled(fixedRate = 25_000)
     public void heartbeat() {

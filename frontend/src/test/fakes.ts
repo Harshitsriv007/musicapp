@@ -41,6 +41,7 @@ export function song(id: number, title: string, extra: Partial<Song> = {}): Song
     source: 'audius',
     addedAt: null,
     liked: false,
+    downloadStatus: 'NONE',
     ...extra,
   };
 }
@@ -52,7 +53,10 @@ export function mockFetch(routes: Record<string, unknown> = {}) {
     const key = `${init?.method ?? 'GET'} ${url.pathname}`;
     const body = key in routes ? routes[key] : undefined;
     if (body instanceof Response) return body;
-    const status = init?.method === 'POST' && url.pathname === '/api/history' ? 201 : body === undefined ? 204 : 200;
+    const status =
+      init?.method === 'POST' && url.pathname === '/api/history' ? 201
+      : init?.method === 'POST' && url.pathname === '/api/downloads' ? 202
+      : body === undefined ? 204 : 200;
     return new Response(body === undefined ? null : JSON.stringify(body), { status });
   });
   vi.stubGlobal('fetch', fn);

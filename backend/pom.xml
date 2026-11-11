@@ -23,6 +23,8 @@
         <wiremock.version>3.9.2</wiremock.version>
         <!-- 1.21.4+ is required for Docker Engine 29 (min API 1.44) -->
         <testcontainers.version>1.21.4</testcontainers.version>
+        <!-- -DskipUTs=true runs only the acceptance tests (make test-acceptance) -->
+        <skipUTs>false</skipUTs>
     </properties>
 
     <dependencies>
@@ -129,11 +131,36 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <!-- `make migrate`: run Flyway migrations without starting the app.
+                 Connection comes from -Dflyway.url / -Dflyway.user / -Dflyway.password. -->
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>${flyway.version}</version>
+                <configuration>
+                    <locations>
+                        <location>filesystem:src/main/resources/db/migration</location>
+                    </locations>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.flywaydb</groupId>
+                        <artifactId>flyway-mysql</artifactId>
+                        <version>${flyway.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>com.mysql</groupId>
+                        <artifactId>mysql-connector-j</artifactId>
+                        <version>${mysql.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
             <!-- Unit tests: *Test.java (no Docker needed) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <skipTests>${skipUTs}</skipTests>
                     <excludes>
                         <exclude>**/*IT.java</exclude>
                     </excludes>

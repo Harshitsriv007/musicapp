@@ -34,9 +34,10 @@ public class SongController {
     public PageResponse<SongDto> list(
             @RequestHeader(name = UserIds.HEADER, defaultValue = UserIds.DEFAULT) String userId,
             @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "false") boolean downloaded,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "30") @Min(1) @Max(100) int size) {
-        return songService.list(UserIds.require(userId), q, page, size);
+        return songService.list(UserIds.require(userId), q, downloaded, page, size);
     }
 
     @GetMapping("/new")

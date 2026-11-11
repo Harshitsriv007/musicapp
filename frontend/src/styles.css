@@ -85,7 +85,7 @@ h1, h2 { margin: 0; }
 /* ---------- song list ---------- */
 .song-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .song-row {
-  display: grid; grid-template-columns: 48px 1fr auto auto; align-items: center; gap: 14px;
+  display: grid; grid-template-columns: 48px 1fr auto auto auto; align-items: center; gap: 10px;
   padding: 8px 10px; border-radius: 12px; cursor: pointer; outline: none;
 }
 .song-row:hover, .song-row:focus-visible { background: var(--bg-hover); }
@@ -121,6 +121,13 @@ h1, h2 { margin: 0; }
 .icon-btn:focus-visible { outline: 2px solid var(--accent); }
 .like-btn { color: var(--text-dim); }
 .like-btn--on { color: var(--like); }
+.dl-btn { color: var(--text-dim); }
+.dl-btn--done { color: #3ddc84; }
+.dl-btn--failed { color: var(--danger); }
+.spinner { display: inline-block; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--accent); animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.full-player__actions { display: flex; align-items: center; gap: 4px; }
 
 .controls { display: flex; align-items: center; gap: 4px; }
 .play-btn { background: var(--text); color: var(--bg); }
@@ -178,7 +185,7 @@ h1, h2 { margin: 0; }
 @media (max-width: 640px) {
   .topbar { flex-direction: column; align-items: stretch; gap: 10px; padding-left: 16px; padding-right: 16px; }
   .view-head h1 { font-size: 24px; }
-  .song-row { grid-template-columns: 48px 1fr auto; gap: 12px; padding: 8px 4px; }
+  .song-row { grid-template-columns: 48px 1fr auto auto; gap: 6px; padding: 8px 4px; }
   .song-row__duration { display: none; }
   .mini-player .controls [aria-label='Stop'], .mini-player .controls [aria-label='Previous'] { display: none; }
   .hide-mobile { display: none; }

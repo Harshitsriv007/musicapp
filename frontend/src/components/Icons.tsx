@@ -42,3 +42,14 @@ export const ChevronIcon = (p: SVGProps<SVGSVGElement>) => (
     <path d="M6 9l6 6 6-6" />
   </svg>
 );
+export const DownloadIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19.5h14" />
+  </svg>
+);
+export const DownloadedIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9.5" />
+    <path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="var(--bg)" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);

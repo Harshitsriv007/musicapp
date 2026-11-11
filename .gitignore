@@ -1,9 +1,32 @@
-node_modules/
-dist/
-coverage/
-target/
-test-results/
-playwright-report/
-.env
+# --- OS / editors ---
 .DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# --- secrets / local config ---
+.env
+.env.*
+!.env.example
+
+# --- logs ---
 *.log
+npm-debug.log*
+
+# --- backend (Maven) ---
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# --- frontend (Node / Vite / tests) ---
+node_modules/
+frontend/dist/
+frontend/dev-dist/
+frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/.eslintcache
+*.tsbuildinfo

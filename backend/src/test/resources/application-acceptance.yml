@@ -14,3 +14,8 @@ spring:
   kafka:
     consumer:
       group-id: music-acceptance
+---
+musicapp:
+  download:
+    auto-on-play: false
+    max-bytes: 10485760

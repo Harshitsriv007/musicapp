@@ -38,7 +38,7 @@ spring:
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
         spring.json.value.default.type: com.musicapp.ingestion.SongEvent
         spring.json.use.type.headers: false
-        spring.json.trusted.packages: com.musicapp.ingestion
+        spring.json.trusted.packages: com.musicapp.ingestion,com.musicapp.download
     listener:
       concurrency: 3
 
@@ -63,7 +63,13 @@ musicapp:
     limit-per-query: ${INGESTION_LIMIT_PER_QUERY:25}
   kafka:
     songs-topic: ${SONGS_TOPIC:music.songs.discovered}
+    downloads-topic: ${DOWNLOADS_TOPIC:music.songs.download-requested}
     partitions: 3
+  download:
+    # Largest audio file stored per song (bytes). Default 100 MB.
+    max-bytes: ${DOWNLOAD_MAX_BYTES:104857600}
+    # Store every song in MySQL the first time it is played, so replays never hit the external API.
+    auto-on-play: ${AUTO_DOWNLOAD_ON_PLAY:true}
   providers:
     audius:
       enabled: ${AUDIUS_ENABLED:true}

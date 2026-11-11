@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class SongControllerTest {
 
     private static final SongDto KESARIYA =
-            new SongDto(1L, "Kesariya", "Arijit Singh", null, "Bollywood", "img", "stream", 268, null, "audius", null, true);
+            new SongDto(1L, "Kesariya", "Arijit Singh", null, "Bollywood", "img", "stream", 268, null, "audius", null, true, "NONE");
 
     @Autowired
     MockMvc mvc;
@@ -47,13 +47,13 @@ class SongControllerTest {
 
     @Test
     void listDefaultsToGuestUser() throws Exception {
-        when(songService.list(eq("guest"), isNull(), eq(0), eq(30))).thenReturn(new PageResponse<>(List.of(KESARIYA), 0, 30, 1, 1));
+        when(songService.list(eq("guest"), isNull(), eq(false), eq(0), eq(30))).thenReturn(new PageResponse<>(List.of(KESARIYA), 0, 30, 1, 1));
 
         mvc.perform(get("/api/songs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(1))
                 .andExpect(jsonPath("$.totalElements").value(1));
-        verify(songService).list("guest", null, 0, 30);
+        verify(songService).list("guest", null, false, 0, 30);
     }
 
     @Test

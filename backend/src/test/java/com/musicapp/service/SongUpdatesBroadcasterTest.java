@@ -15,7 +15,7 @@ class SongUpdatesBroadcasterTest {
         assertThat(broadcaster.subscriberCount()).isEqualTo(2);
 
         // Emitters not bound to an HTTP response buffer events instead of failing.
-        broadcaster.songAdded(new SongDto(1L, "A", null, null, null, null, "s", null, null, "audius", null, false));
+        broadcaster.songAdded(new SongDto(1L, "A", null, null, null, null, "s", null, null, "audius", null, false, "NONE"));
         broadcaster.heartbeat();
 
         assertThat(broadcaster.subscriberCount()).isEqualTo(2);

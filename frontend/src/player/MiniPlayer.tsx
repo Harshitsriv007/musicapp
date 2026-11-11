@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Artwork } from '../components/Artwork';
 import { ChevronIcon, PopOutIcon } from '../components/Icons';
+import { DownloadButton } from '../components/DownloadButton';
 import { LikeButton } from '../components/LikeButton';
 import { formatDuration } from '../lib/format';
 import { usePlayer } from './PlayerContext';
@@ -54,7 +55,10 @@ export function MiniPlayer() {
               <h2>{song.title}</h2>
               <p>{song.artist}</p>
             </div>
-            <LikeButton song={song} size={26} />
+            <div className="full-player__actions">
+              <DownloadButton song={song} size={24} />
+              <LikeButton song={song} size={26} />
+            </div>
           </div>
           <SeekBar />
           <div className="full-player__times">

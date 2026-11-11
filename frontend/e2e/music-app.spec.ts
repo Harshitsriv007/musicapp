@@ -90,6 +90,37 @@ test.describe('Listener journeys', () => {
     await expect(page.getByRole('button', { name: 'Play Heeriye by Arijit Singh' })).toBeVisible();
   });
 
+  test('download all liked songs, then play them from our own server', async ({ page }) => {
+    const backend = await fakeBackend(page, catalogue);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Like Kesariya' }).click();
+    await page.getByRole('button', { name: 'Like Chaleya' }).click();
+    await page.getByRole('link', { name: 'Liked' }).click();
+
+    await page.getByRole('button', { name: 'Download all (2)' }).click();
+
+    await expect(page.getByRole('button', { name: 'All downloaded' })).toBeDisabled();
+    await page.getByRole('link', { name: 'Downloads' }).click();
+    await expect(page.getByRole('button', { name: /^Play / })).toHaveText([/Chaleya/, /Kesariya/]);
+
+    await page.getByRole('button', { name: 'Play Kesariya by Arijit Singh' }).click();
+    await expect(page.getByTestId('now-playing-title')).toHaveText('Kesariya');
+    await expect.poll(() => backend.audioServedFromDb).toContain(2);
+
+    await page.getByRole('button', { name: 'Remove download of Chaleya' }).click();
+    await expect(page.getByRole('button', { name: /^Play / })).toHaveText([/Kesariya/]);
+  });
+
+  test('download a single song from All songs', async ({ page }) => {
+    await fakeBackend(page, catalogue);
+    await page.goto('/#library');
+
+    await page.getByRole('button', { name: 'Download Tum Hi Ho' }).click();
+
+    await expect(page.getByRole('button', { name: 'Remove download of Tum Hi Ho' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Download all (2)' })).toBeVisible();
+  });
+
   test('installable as an app (PWA manifest)', async ({ page, request }) => {
     await fakeBackend(page, catalogue);
     await page.goto('/');

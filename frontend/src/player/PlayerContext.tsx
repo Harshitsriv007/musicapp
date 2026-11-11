@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { api } from '../api/client';
+import { api, audioUrl } from '../api/client';
 import type { Song } from '../api/types';
 import { registerHandlers, updateMetadata, updatePlaybackState, updatePosition } from './mediaSession';
 
@@ -71,7 +71,7 @@ export function PlayerProvider({ children, onPlayRecorded, audioFactory }: Props
       setError(null);
       setCurrentTime(0);
       setDuration(song.durationSeconds ?? 0);
-      audio.src = song.streamUrl;
+      audio.src = audioUrl(song);
       audio.currentTime = 0;
       const started = audio.play();
       if (started && typeof started.catch === 'function') {
