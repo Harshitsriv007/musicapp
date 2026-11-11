@@ -66,9 +66,11 @@ a { color: inherit; }
 .sidebar {
   position: fixed; inset: 0 auto 0 0; z-index: 15; width: var(--sidebar-w);
   display: flex; flex-direction: column; gap: 6px;
-  padding: calc(var(--safe-t) + 22px) 14px calc(var(--mini-h) + 16px);
+  padding: calc(var(--safe-t) + 22px) 14px 16px;
   background: var(--bg-elev); border-right: 1px solid var(--border);
 }
+/* Make room for the player bar only while a song is loaded, so the account sits on the bottom edge otherwise. */
+.app:has(.mini-player) .sidebar { padding-bottom: calc(var(--mini-h) + 16px); }
 .sidebar__top { display: contents; }
 .sidebar .brand { order: 0; padding: 0 10px 18px; }
 .sidebar .nav { order: 1; }
