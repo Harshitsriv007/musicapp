@@ -17,5 +17,4 @@ spring:
 ---
 musicapp:
   download:
-    auto-on-play: false
     max-bytes: 10485760

@@ -68,8 +68,6 @@ musicapp:
   download:
     # Largest audio file stored per song (bytes). Default 100 MB.
     max-bytes: ${DOWNLOAD_MAX_BYTES:104857600}
-    # Store every song in MySQL the first time it is played, so replays never hit the external API.
-    auto-on-play: ${AUTO_DOWNLOAD_ON_PLAY:true}
   providers:
     audius:
       enabled: ${AUDIUS_ENABLED:true}

@@ -93,7 +93,7 @@ migrate: ## Apply Flyway DB migrations (MySQL must be running: make dkr-up)
 	$(call run,cd backend && $(MVN) -q flyway:migrate -Dflyway.url="$${DB_URL:-$(DB_URL_LOCAL)}" -Dflyway.user="$${DB_USER:-musicapp}" -Dflyway.password="$${DB_PASSWORD:-musicapp}")
 
 migrate-info: ## Show applied and pending migrations
-	$(call run,cd backend && $(MVN) -q flyway:info -Dflyway.url="$${DB_URL:-$(DB_URL_LOCAL)}" -Dflyway.user="$${DB_USER:-musicapp}" -Dflyway.password="$${DB_PASSWORD:-musicapp}")
+	$(call run,cd backend && $(MVN) flyway:info -Dflyway.url="$${DB_URL:-$(DB_URL_LOCAL)}" -Dflyway.user="$${DB_USER:-musicapp}" -Dflyway.password="$${DB_PASSWORD:-musicapp}")
 
 run-backend: ## Run Spring Boot from source (port 8081 in the dev container; needs make dkr-up)
 	$(call run_ports,cd backend && $(MVN) spring-boot:run)

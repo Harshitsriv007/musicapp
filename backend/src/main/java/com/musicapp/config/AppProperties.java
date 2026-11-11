@@ -23,10 +23,11 @@ public record AppProperties(Ingestion ingestion, Kafka kafka, Providers provider
     public record Kafka(String songsTopic, String downloadsTopic, int partitions) {}
 
     /**
-     * @param maxBytes   largest audio file we are willing to store per song
-     * @param autoOnPlay store every song the first time someone plays it, so later plays come from our DB
+     * Songs stream live from the music API; only songs the user downloads are stored in MySQL.
+     *
+     * @param maxBytes largest audio file we are willing to store per song
      */
-    public record Download(long maxBytes, boolean autoOnPlay) {
+    public record Download(long maxBytes) {
         public Download {
             maxBytes = maxBytes <= 0 ? 100L * 1024 * 1024 : maxBytes;
         }

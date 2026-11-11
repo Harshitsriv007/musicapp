@@ -15,7 +15,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -23,8 +22,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Copies song audio from the external music API into MySQL so it can be replayed
- * from our own database: no repeated API calls and no buffering.
+ * Copies the audio of songs the user chose to download from the external music API into
+ * MySQL, so they replay from our own database: no repeated API calls and no buffering.
+ * Songs that are not downloaded keep streaming live from the music API.
  */
 @Service
 public class DownloadService {
@@ -73,13 +73,6 @@ public class DownloadService {
         songs.saveAll(found);
         afterCommit(() -> queued.forEach(producer::publish));
         return found.stream().map(s -> new DownloadStatusDto(s.getId(), s.getDownloadStatus().name())).toList();
-    }
-
-    @EventListener
-    public void onSongPlayed(SongPlayedEvent event) {
-        if (config.autoOnPlay()) {
-            request(List.of(event.songId()));
-        }
     }
 
     /** Called by the Kafka consumer. Never throws: failures are recorded on the song. */

@@ -50,7 +50,7 @@ class DownloadServiceTest {
     void setUp() {
         when(tx.execute(any())).thenAnswer(inv -> ((TransactionCallback<Object>) inv.getArgument(0))
                 .doInTransaction(new SimpleTransactionStatus()));
-        // TestFixtures: max 10_000 bytes, auto-download on play enabled
+        // TestFixtures: max 10_000 bytes per song
         service = new DownloadService(songs, storage, fetcher, producer, broadcaster, tx,
                 Clock.fixed(NOW, ZoneOffset.UTC), TestFixtures.props("https://a", List.of("q")));
         kesariya = song(1, "Kesariya");
@@ -77,15 +77,6 @@ class DownloadServiceTest {
         when(songs.findAllById(any())).thenReturn(List.of());
 
         assertThatThrownBy(() -> service.request(List.of(99L))).isInstanceOf(SongNotFoundException.class);
-    }
-
-    @Test
-    void firstPlayQueuesADownloadWhenAutoDownloadIsOn() {
-        when(songs.findAllById(List.of(1L))).thenReturn(List.of(kesariya));
-
-        service.onSongPlayed(new SongPlayedEvent(1L));
-
-        verify(producer).publish(1L);
     }
 
     @Test
