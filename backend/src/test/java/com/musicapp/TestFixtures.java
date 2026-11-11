@@ -1,0 +1,35 @@
+package com.musicapp;
+
+import com.musicapp.config.AppProperties;
+import com.musicapp.domain.Song;
+import com.musicapp.ingestion.SongEvent;
+import java.time.LocalDate;
+import java.util.List;
+
+public final class TestFixtures {
+
+    private TestFixtures() {}
+
+    public static AppProperties props(String audiusUrl, List<String> queries) {
+        return new AppProperties(
+                new AppProperties.Ingestion("-", false, queries, 10),
+                new AppProperties.Kafka("music.songs.discovered", 1),
+                new AppProperties.Providers(
+                        new AppProperties.Audius(true, audiusUrl, "testapp"),
+                        new AppProperties.Jamendo(true, "https://jamendo.test", "cid", "bollywood")),
+                new AppProperties.Cors(List.of("*")));
+    }
+
+    public static SongEvent event(String id, String title) {
+        return new SongEvent("audius", id, title, "Arijit Singh", null, "Bollywood",
+                "https://img/" + id + ".jpg", "https://stream/" + id, 240, LocalDate.of(2024, 1, 1));
+    }
+
+    public static Song song(long id, String title) {
+        Song s = new Song("audius", "ext-" + id).withId(id);
+        s.setTitle(title);
+        s.setArtist("Arijit Singh");
+        s.setStreamUrl("https://stream/" + id);
+        return s;
+    }
+}

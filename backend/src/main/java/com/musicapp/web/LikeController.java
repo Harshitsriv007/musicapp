@@ -1,0 +1,53 @@
+package com.musicapp.web;
+
+import com.musicapp.service.LikeService;
+import com.musicapp.web.dto.LikedSongDto;
+import com.musicapp.web.dto.PageResponse;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/likes")
+@Validated
+public class LikeController {
+
+    private final LikeService likeService;
+
+    public LikeController(LikeService likeService) {
+        this.likeService = likeService;
+    }
+
+    @GetMapping
+    public PageResponse<LikedSongDto> list(
+            @RequestHeader(name = UserIds.HEADER, defaultValue = UserIds.DEFAULT) String userId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "50") @Min(1) @Max(200) int size) {
+        return likeService.list(UserIds.require(userId), page, size);
+    }
+
+    @PutMapping("/{songId}")
+    public ResponseEntity<Void> like(
+            @RequestHeader(name = UserIds.HEADER, defaultValue = UserIds.DEFAULT) String userId,
+            @PathVariable Long songId) {
+        likeService.like(UserIds.require(userId), songId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{songId}")
+    public ResponseEntity<Void> unlike(
+            @RequestHeader(name = UserIds.HEADER, defaultValue = UserIds.DEFAULT) String userId,
+            @PathVariable Long songId) {
+        likeService.unlike(UserIds.require(userId), songId);
+        return ResponseEntity.noContent().build();
+    }
+}

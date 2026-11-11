@@ -1,0 +1,16 @@
+musicapp:
+  ingestion:
+    cron: "-"
+    run-on-startup: false
+    queries: bollywood
+    limit-per-query: 10
+  providers:
+    audius:
+      enabled: true
+      app-name: musicapp-test
+    jamendo:
+      enabled: false
+spring:
+  kafka:
+    consumer:
+      group-id: music-acceptance
