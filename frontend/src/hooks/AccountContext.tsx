@@ -7,6 +7,8 @@ interface AccountApi {
   username: string | null;
   logIn: (username: string, password: string) => Promise<void>;
   signUp: (username: string, password: string) => Promise<void>;
+  /** "Forgot password": sets a new password and logs in. */
+  resetPassword: (username: string, newPassword: string) => Promise<void>;
   logOut: () => Promise<void>;
 }
 
@@ -34,6 +36,10 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     setSession(await api.signUp(name, password));
   }, []);
 
+  const resetPassword = useCallback(async (name: string, newPassword: string) => {
+    setSession(await api.resetPassword(name, newPassword));
+  }, []);
+
   const logOut = useCallback(async () => {
     try {
       await api.logOut();
@@ -42,7 +48,10 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const value = useMemo(() => ({ username, logIn, signUp, logOut }), [username, logIn, signUp, logOut]);
+  const value = useMemo(
+    () => ({ username, logIn, signUp, resetPassword, logOut }),
+    [username, logIn, signUp, resetPassword, logOut],
+  );
   return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;
 }
 

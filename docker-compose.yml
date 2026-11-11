@@ -72,6 +72,7 @@ services:
       INGESTION_QUERIES: ${INGESTION_QUERIES:-bollywood,hindi songs,arijit singh,bollywood romantic,punjabi}
       JAMENDO_ENABLED: ${JAMENDO_ENABLED:-false}
       JAMENDO_CLIENT_ID: ${JAMENDO_CLIENT_ID:-}
+      PASSWORD_RESET_ENABLED: ${PASSWORD_RESET_ENABLED:-true}
     ports:
       - "8080:8080"
     depends_on:

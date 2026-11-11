@@ -31,6 +31,14 @@ public class AccountSteps {
         api.tokens.put(device, response.getBody().get("token").asText());
     }
 
+    @When("{string} resets the password of {string} to {string}")
+    public void resetsPassword(String device, String username, String password) {
+        ResponseEntity<JsonNode> response = api.call(HttpMethod.POST, "/api/auth/reset-password", device,
+                Map.of("username", username, "newPassword", password));
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        api.tokens.put(device, response.getBody().get("token").asText());
+    }
+
     @When("{string} logs out")
     public void logsOut(String device) {
         assertThat(api.send(HttpMethod.POST, "/api/auth/logout", device, null).value()).isEqualTo(204);

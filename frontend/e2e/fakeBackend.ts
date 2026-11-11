@@ -93,6 +93,10 @@ export async function fakeBackend(page: Page, initial: FakeSong[], { loggedIn = 
       if (password !== 'secret-123') return json(route, { detail: 'Wrong username or password' }, 401);
       return json(route, { token: `token-${username}`, username }, path.endsWith('signup') ? 201 : 200);
     }
+    if (method === 'POST' && path === '/api/auth/reset-password') {
+      const { username } = JSON.parse(req.postData() ?? '{}') as { username: string };
+      return json(route, { token: `token-${username}`, username });
+    }
     if (method === 'POST' && path === '/api/auth/logout') return route.fulfill({ status: 204 });
     if (method === 'GET' && path === '/api/songs/new') return json(route, songs.map(view));
     if (method === 'GET' && path === '/api/songs') {

@@ -37,4 +37,5 @@ public class UserAccount {
     public String getUsername() { return username; }
     public String getPasswordHash() { return passwordHash; }
     public Instant getCreatedAt() { return createdAt; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 }

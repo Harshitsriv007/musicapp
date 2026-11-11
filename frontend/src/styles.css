@@ -473,3 +473,4 @@ a { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+.field__aside { align-self: flex-end; font-size: 13px; margin-top: 2px; }

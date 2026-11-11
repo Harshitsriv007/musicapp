@@ -255,5 +255,19 @@ test.describe('Accounts', () => {
     await page.getByRole('button', { name: 'Log out' }).click();
     await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
   });
+
+  test('forgot password: set a new password and land in the app', async ({ page }) => {
+    await fakeBackend(page, catalogue, { loggedIn: false });
+    await page.goto('/');
+
+    await page.getByRole('button', { name: 'Forgot password?' }).click();
+    await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
+    await page.getByLabel('Username', { exact: true }).fill('riya');
+    await page.getByLabel('New password', { exact: true }).fill('new-pass-1');
+    await page.getByLabel('Confirm new password', { exact: true }).fill('new-pass-1');
+    await page.getByRole('button', { name: 'Save new password' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Welcome back, riya' })).toBeVisible();
+  });
 });
 

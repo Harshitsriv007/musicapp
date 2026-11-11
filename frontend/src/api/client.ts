@@ -63,6 +63,8 @@ export const api = {
   logIn: (username: string, password: string) =>
     request<AuthResponse>('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
   logOut: () => request<void>('/api/auth/logout', { method: 'POST' }),
+  resetPassword: (username: string, newPassword: string) =>
+    request<AuthResponse>('/api/auth/reset-password', { method: 'POST', body: JSON.stringify({ username, newPassword }) }),
   newSongs: (limit = 50) => request<Song[]>(`/api/songs/new?limit=${limit}`),
   songs: (q: string, page = 0, size = 30, filter: SongQuery = {}) => {
     const params = new URLSearchParams({ page: String(page), size: String(size) });

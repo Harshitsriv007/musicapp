@@ -65,4 +65,26 @@ describe('LoginView', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Show password' }));
     expect(password).toHaveAttribute('type', 'text');
   });
+
+  it('resets a forgotten password and logs in', async () => {
+    const fetchMock = mockFetch({ 'POST /api/auth/reset-password': { token: 'tok2', username: 'riya' } });
+    renderLogin();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Forgot password?' }));
+    expect(screen.getByRole('heading', { name: 'Reset your password' })).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Username'), 'riya');
+    await userEvent.type(screen.getByLabelText('New password'), 'new-pass-1');
+    await userEvent.type(screen.getByLabelText('Confirm new password'), 'new-pass-2');
+    await userEvent.click(screen.getByRole('button', { name: 'Save new password' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('The two passwords don’t match.');
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await userEvent.clear(screen.getByLabelText('Confirm new password'));
+    await userEvent.type(screen.getByLabelText('Confirm new password'), 'new-pass-1');
+    await userEvent.click(screen.getByRole('button', { name: 'Save new password' }));
+
+    expect(getSession()).toEqual({ token: 'tok2', username: 'riya' });
+    expect(fetchMock.mock.calls[0][1]!.body).toBe('{"username":"riya","newPassword":"new-pass-1"}');
+  });
 });

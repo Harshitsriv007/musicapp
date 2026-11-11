@@ -19,6 +19,7 @@ import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,18 +43,21 @@ public class AccountService {
     private final LikedSongRepository likes;
     private final PlayHistoryRepository history;
     private final Clock clock;
+    private final boolean passwordResetEnabled;
     private final PasswordEncoder passwords = new BCryptPasswordEncoder();
     private final SecureRandom random = new SecureRandom();
     /** Compared against when the username is unknown, so both cases take the same time. */
     private final String dummyHash = passwords.encode("not-a-real-password");
 
     public AccountService(UserAccountRepository users, AuthSessionRepository sessions,
-                          LikedSongRepository likes, PlayHistoryRepository history, Clock clock) {
+                          LikedSongRepository likes, PlayHistoryRepository history, Clock clock,
+                          @Value("${musicapp.auth.password-reset-enabled:true}") boolean passwordResetEnabled) {
         this.users = users;
         this.sessions = sessions;
         this.likes = likes;
         this.history = history;
         this.clock = clock;
+        this.passwordResetEnabled = passwordResetEnabled;
     }
 
     /**
@@ -89,6 +93,25 @@ public class AccountService {
             throw AccountException.badCredentials();
         }
         return startSession(account.get(), deviceId);
+    }
+
+    /**
+     * "Forgot password": sets a new password from just the username, then logs this device in.
+     * There is deliberately no verification (no email / recovery code), so anyone who can reach
+     * the server can reset any account. Every existing session is ended. Turn it off with
+     * PASSWORD_RESET_ENABLED=false before exposing the app to people you don't trust.
+     */
+    @Transactional
+    public Session resetPassword(String rawUsername, String newPassword, String deviceId) {
+        if (!passwordResetEnabled) {
+            throw AccountException.resetDisabled();
+        }
+        validatePassword(newPassword);
+        UserAccount account = users.findByUsername(normalizeUsername(rawUsername))
+                .orElseThrow(AccountException::unknownUser);
+        account.setPasswordHash(passwords.encode(newPassword));
+        sessions.deleteByUserId(account.getId());
+        return startSession(account, deviceId);
     }
 
     @Transactional

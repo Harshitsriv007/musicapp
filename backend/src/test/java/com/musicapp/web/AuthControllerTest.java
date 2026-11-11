@@ -73,6 +73,16 @@ class AuthControllerTest {
     }
 
     @Test
+    void resetPasswordReturnsANewSession() throws Exception {
+        when(accountService.resetPassword("riya", "new-pass-1", "device1")).thenReturn(new Session("tok2", 7, "riya"));
+
+        mvc.perform(post("/api/auth/reset-password").header("X-User-Id", "device1")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"username\":\"riya\",\"newPassword\":\"new-pass-1\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("tok2"));
+    }
+
+    @Test
     void meAndLogout() throws Exception {
         when(accountService.authenticate("tok")).thenReturn(Optional.of(new Session("tok", 7, "riya")));
 

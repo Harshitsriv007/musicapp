@@ -6,6 +6,7 @@ import com.musicapp.account.Session;
 import com.musicapp.web.dto.AccountDto;
 import com.musicapp.web.dto.AuthRequest;
 import com.musicapp.web.dto.AuthResponse;
+import com.musicapp.web.dto.ResetPasswordRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -44,6 +45,14 @@ public class AuthController {
             @RequestHeader(name = UserIds.HEADER, required = false) String deviceId,
             @Valid @RequestBody AuthRequest request) {
         return AuthResponse.from(accounts.logIn(request.username(), request.password(), deviceId));
+    }
+
+    /** "Forgot password": new password for a username; returns a fresh session like login. */
+    @PostMapping("/reset-password")
+    public AuthResponse resetPassword(
+            @RequestHeader(name = UserIds.HEADER, required = false) String deviceId,
+            @Valid @RequestBody ResetPasswordRequest request) {
+        return AuthResponse.from(accounts.resetPassword(request.username(), request.newPassword(), deviceId));
     }
 
     @PostMapping("/logout")

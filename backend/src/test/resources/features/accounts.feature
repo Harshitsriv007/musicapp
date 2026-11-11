@@ -22,6 +22,14 @@ Feature: Accounts
     And "tablet" logs in as "riya" with password "secret-123"
     Then the liked songs of "tablet" are "Tum Hi Ho, Kesariya"
 
+  Scenario: Forgot password sets a new one and logs out other devices
+    When "phone" signs up as "riya" with password "secret-123"
+    And "laptop" resets the password of "riya" to "new-pass-456"
+    Then logging in as "riya" with password "secret-123" is rejected
+    And requests from "phone" are rejected until it logs in again
+    When "phone" logs in as "riya" with password "new-pass-456"
+    Then the liked songs of "phone" are empty
+
   Scenario: Wrong password, taken username and logout
     When "phone" signs up as "riya" with password "secret-123"
     Then signing up as "Riya" is rejected as a conflict

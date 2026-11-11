@@ -35,7 +35,7 @@ class AccountServiceTest {
     private final LikedSongRepository likes = mock(LikedSongRepository.class);
     private final PlayHistoryRepository history = mock(PlayHistoryRepository.class);
     private final AccountService service =
-            new AccountService(users, sessions, likes, history, Clock.fixed(NOW, ZoneOffset.UTC));
+            new AccountService(users, sessions, likes, history, Clock.fixed(NOW, ZoneOffset.UTC), true);
 
     private static UserAccount account(long id, String username, String password) {
         UserAccount account = new UserAccount(username, new BCryptPasswordEncoder().encode(password), NOW);
@@ -140,6 +140,35 @@ class AccountServiceTest {
         service.authenticate("tok");
 
         assertThat(session.getLastUsedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void resetPasswordSetsNewHashEndsOldSessionsAndLogsIn() {
+        UserAccount riya = account(3, "riya", "old-pass-1");
+        when(users.findByUsername("riya")).thenReturn(Optional.of(riya));
+
+        Session session = service.resetPassword("Riya", "new-pass-1", "device1");
+
+        assertThat(new BCryptPasswordEncoder().matches("new-pass-1", riya.getPasswordHash())).isTrue();
+        verify(sessions).deleteByUserId(3L);
+        verify(sessions).save(any());
+        assertThat(session.accountId()).isEqualTo(3L);
+    }
+
+    @Test
+    void resetPasswordValidatesAndNeedsAnExistingAccount() {
+        assertThatThrownBy(() -> service.resetPassword("riya", "short", "d")).isInstanceOf(IllegalArgumentException.class);
+        when(users.findByUsername("nobody")).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.resetPassword("nobody", "new-pass-1", "d"))
+                .isInstanceOfSatisfying(AccountException.class, e -> assertThat(e.status()).isEqualTo(HttpStatus.NOT_FOUND));
+    }
+
+    @Test
+    void resetPasswordCanBeTurnedOff() {
+        AccountService locked = new AccountService(users, sessions, likes, history, Clock.fixed(NOW, ZoneOffset.UTC), false);
+        assertThatThrownBy(() -> locked.resetPassword("riya", "new-pass-1", "d"))
+                .isInstanceOfSatisfying(AccountException.class, e -> assertThat(e.status()).isEqualTo(HttpStatus.FORBIDDEN));
+        verify(users, never()).findByUsername(anyString());
     }
 
     @Test
