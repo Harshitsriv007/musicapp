@@ -28,6 +28,19 @@ Feature: Download songs into our own database
     Then "Kesariya" is not downloaded
     And the audio of "Kesariya" is no longer served
 
+  Scenario: Downloads are private to the listener who made them
+    When listener "riya" downloads "Kesariya"
+    Then "Kesariya" is eventually downloaded
+    And "Kesariya" is not downloaded for "aman"
+    And the downloaded songs of "aman" are empty
+    When listener "aman" downloads "Kesariya"
+    Then "Kesariya" is downloaded for "aman"
+    And the music API served the audio of song "a2" only once
+    When listener "riya" removes the download of "Kesariya"
+    Then "Kesariya" is not downloaded
+    And "Kesariya" is downloaded for "aman"
+    And the audio of "Kesariya" played from our API matches the original
+
   Scenario: A failing source marks the download as failed
     When listener "riya" downloads "Tum Hi Ho"
     Then "Tum Hi Ho" eventually has download status "FAILED"

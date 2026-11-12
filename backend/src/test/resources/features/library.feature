@@ -1,5 +1,5 @@
 Feature: Liked songs and listening history
-  Each listener (device) has their own liked songs and play history.
+  Each listener (account) has their own liked songs and play history.
 
   Background:
     Given the catalogue contains the songs "Tum Hi Ho, Kesariya, Chaiyya Chaiyya"

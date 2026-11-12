@@ -5,10 +5,11 @@ const catalogue = [
   song(3, 'Chaleya', 'Arijit Singh', '2023-08-14', 'Jawan'),
   song(2, 'Kesariya', 'Arijit Singh', '2022-07-17', 'Brahmastra'),
   song(1, 'Tum Hi Ho', 'Arijit Singh', '2013-04-01', 'Aashiqui 2'),
+  song(6, 'Lag Ja Gale', 'Lata Mangeshkar', '1964-01-01', 'Woh Kaun Thi'),
   song(4, 'Deva Deva', 'Arijit Singh', '2022-08-08', 'Brahmastra'),
   song(5, 'Tum Kya Mile', 'Shreya Ghoshal', '2023-06-28'),
 ];
-const NEW_SONGS = 5;
+const NEW_SONGS = 6;
 
 test.describe('Listener journeys', () => {
   test('new songs list loads and plays a song in the mini player', async ({ page }) => {
@@ -130,13 +131,15 @@ test.describe('Listener journeys', () => {
     await expect(page.getByRole('button', { name: `Download all (${NEW_SONGS - 1})` })).toBeVisible();
   });
 
-  test('home shows new songs and folders by year, artist and movie', async ({ page }) => {
+  test('home shows new songs and folders by decade, artist and movie', async ({ page }) => {
     await fakeBackend(page, catalogue);
     await page.goto('/');
 
     await expect(page.getByRole('heading', { name: 'New songs' })).toBeVisible();
-    const years = page.getByRole('region', { name: 'Songs by year' });
-    await expect(years.getByRole('listitem')).toHaveText([/2023/, /2022/, /2013/]);
+    const decades = page.getByRole('region', { name: 'Songs by decade' });
+    await expect(decades.getByRole('listitem')).toHaveText([/Latest/, /20s/, /10s/, /00s/, /90s/, /80s/, /70s/, /60s/, /50s/]);
+    await expect(decades.getByRole('link', { name: '20s, 4 songs' })).toBeVisible();
+    await expect(decades.getByRole('link', { name: '90s, 0 songs' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Artists' }).getByRole('link', { name: 'Arijit Singh, 4 songs' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Movies & albums' }).getByRole('link', { name: 'Brahmastra, 2 songs' })).toBeVisible();
 
@@ -163,13 +166,17 @@ test.describe('Listener journeys', () => {
     await expect(page.getByRole('button', { name: /^Play / })).toHaveCount(2);
   });
 
-  test('year and artist folders, with per-song like and download', async ({ page }) => {
+  test('decade and artist folders, with per-song like and download', async ({ page }) => {
     await fakeBackend(page, catalogue);
     await page.goto('/');
-    await page.getByRole('region', { name: 'Songs by year' }).getByRole('link', { name: 'See all' }).click();
-    await page.getByRole('link', { name: '2023, 2 songs' }).click();
+    await page.getByRole('region', { name: 'Songs by decade' }).getByRole('link', { name: 'See all' }).click();
+    await page.getByRole('link', { name: '60s, 1 song' }).click();
+    await expect(page.getByRole('heading', { name: '60s' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Play .* by / })).toHaveText([/Lag Ja Gale/]);
 
-    await expect(page.getByRole('heading', { name: '2023' })).toBeVisible();
+    await page.getByRole('link', { name: '← All decades' }).click();
+    await page.getByRole('link', { name: '20s, 4 songs' }).click();
+    await expect(page.getByRole('heading', { name: '20s' })).toBeVisible();
     await page.getByRole('button', { name: 'Like Tum Kya Mile' }).click();
     await page.getByRole('button', { name: 'Download Chaleya' }).click();
     await expect(page.getByRole('button', { name: 'Unlike Tum Kya Mile' })).toBeVisible();
@@ -180,6 +187,38 @@ test.describe('Listener journeys', () => {
     await page.getByRole('link', { name: 'Shreya Ghoshal, 1 song' }).click();
     await expect(page.getByRole('button', { name: /^Play .* by / })).toHaveText([/Tum Kya Mile/]);
     await expect(page.getByRole('button', { name: 'Unlike all' })).toBeVisible(); // its only song is liked
+  });
+
+  test('search by song name, artist and movie', async ({ page }) => {
+    await fakeBackend(page, catalogue);
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Search' }).click();
+    const box = page.getByRole('searchbox', { name: 'Search songs, artists or movies' });
+
+    await box.fill('kesar');
+    await expect(page.getByRole('region', { name: 'Songs' }).getByRole('button', { name: /^Play / })).toHaveText([/Kesariya/]);
+
+    await box.fill('shreya');
+    await expect(page.getByRole('region', { name: 'Artists' }).getByRole('link', { name: 'Shreya Ghoshal, 1 song' })).toBeVisible();
+
+    await box.fill('brahmastra');
+    const songs = page.getByRole('region', { name: 'Songs' });
+    await expect(songs.getByRole('button', { name: /^Play / })).toHaveText([/Kesariya/, /Deva Deva/]);
+    await songs.getByRole('button', { name: 'Like Deva Deva' }).click();
+    await expect(songs.getByRole('button', { name: 'Unlike Deva Deva' })).toBeVisible();
+    await expect(page).toHaveURL(/#search\/brahmastra$/);
+
+    await page.getByRole('region', { name: 'Movies & albums' }).getByRole('link', { name: 'Brahmastra, 2 songs' }).click();
+    await expect(page.getByRole('heading', { name: 'Brahmastra' })).toBeVisible();
+    await page.goBack();
+    await expect(box).toHaveValue('brahmastra');
+  });
+
+  test('press / to search from anywhere', async ({ page }) => {
+    await fakeBackend(page, catalogue);
+    await page.goto('/#liked');
+    await page.keyboard.press('/');
+    await expect(page.getByRole('searchbox', { name: 'Search songs, artists or movies' })).toBeFocused();
   });
 
   test('installable as an app (PWA manifest)', async ({ page, request }) => {
@@ -193,3 +232,42 @@ test.describe('Listener journeys', () => {
     expect(manifest.icons.map((i: { sizes: string }) => i.sizes)).toEqual(expect.arrayContaining(['192x192', '512x512']));
   });
 });
+
+test.describe('Accounts', () => {
+  test('the login page comes first, and logging in opens the app', async ({ page }) => {
+    await fakeBackend(page, catalogue, { loggedIn: false });
+    await page.goto('/');
+
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Sections' })).toHaveCount(0);
+
+    await page.getByLabel('Username', { exact: true }).fill('riya');
+    await page.getByLabel('Password', { exact: true }).fill('wrong-pass');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page.getByRole('alert')).toHaveText('Wrong username or password');
+
+    await page.getByLabel('Password', { exact: true }).fill('secret-123');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page.getByRole('heading', { name: 'Welcome back, riya' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Play .* by / }).first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Account: riya' }).click();
+    await page.getByRole('button', { name: 'Log out' }).click();
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+  });
+
+  test('forgot password: set a new password and land in the app', async ({ page }) => {
+    await fakeBackend(page, catalogue, { loggedIn: false });
+    await page.goto('/');
+
+    await page.getByRole('button', { name: 'Forgot password?' }).click();
+    await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
+    await page.getByLabel('Username', { exact: true }).fill('riya');
+    await page.getByLabel('New password', { exact: true }).fill('new-pass-1');
+    await page.getByLabel('Confirm new password', { exact: true }).fill('new-pass-1');
+    await page.getByRole('button', { name: 'Save new password' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Welcome back, riya' })).toBeVisible();
+  });
+});
+

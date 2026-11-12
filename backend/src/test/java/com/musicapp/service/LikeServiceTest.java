@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.musicapp.domain.LikedSong;
 import com.musicapp.repository.LikedSongRepository;
 import com.musicapp.repository.SongRepository;
+import com.musicapp.repository.UserDownloadRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -28,7 +29,7 @@ class LikeServiceTest {
 
     private final LikedSongRepository likes = mock(LikedSongRepository.class);
     private final SongRepository songs = mock(SongRepository.class);
-    private final LikeService service = new LikeService(likes, songs, Clock.fixed(NOW, ZoneOffset.UTC));
+    private final LikeService service = new LikeService(likes, songs, mock(UserDownloadRepository.class), Clock.fixed(NOW, ZoneOffset.UTC));
 
     @Test
     void likeStoresSongForUser() {

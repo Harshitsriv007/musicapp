@@ -1,5 +1,6 @@
 package com.musicapp.web;
 
+import com.musicapp.account.AccountException;
 import com.musicapp.service.SongNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SongNotFoundException.class)
     ProblemDetail notFound(SongNotFoundException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler(AccountException.class)
+    ProblemDetail account(AccountException e) {
+        return ProblemDetail.forStatusAndDetail(e.status(), e.getMessage());
     }
 
     @ExceptionHandler({IllegalArgumentException.class, ConstraintViolationException.class,

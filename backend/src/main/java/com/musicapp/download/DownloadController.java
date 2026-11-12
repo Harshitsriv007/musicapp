@@ -1,5 +1,6 @@
 package com.musicapp.download;
 
+import com.musicapp.web.CurrentUser;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import java.util.List;
@@ -31,18 +32,19 @@ public class DownloadController {
 
     /** Download several songs (e.g. "Download all" on Liked songs). */
     @PostMapping("/api/downloads")
-    public ResponseEntity<List<DownloadStatusDto>> downloadMany(@Valid @RequestBody DownloadBatchRequest body) {
-        return ResponseEntity.accepted().body(downloadService.request(body.songIds()));
+    public ResponseEntity<List<DownloadStatusDto>> downloadMany(@CurrentUser String userId,
+                                                                @Valid @RequestBody DownloadBatchRequest body) {
+        return ResponseEntity.accepted().body(downloadService.request(userId, body.songIds()));
     }
 
     @PostMapping("/api/songs/{id}/download")
-    public ResponseEntity<DownloadStatusDto> download(@PathVariable Long id) {
-        return ResponseEntity.accepted().body(downloadService.request(List.of(id)).getFirst());
+    public ResponseEntity<DownloadStatusDto> download(@CurrentUser String userId, @PathVariable Long id) {
+        return ResponseEntity.accepted().body(downloadService.request(userId, List.of(id)).getFirst());
     }
 
     @DeleteMapping("/api/songs/{id}/download")
-    public ResponseEntity<Void> remove(@PathVariable Long id) {
-        downloadService.remove(id);
+    public ResponseEntity<Void> remove(@CurrentUser String userId, @PathVariable Long id) {
+        downloadService.remove(userId, id);
         return ResponseEntity.noContent().build();
     }
 

@@ -8,6 +8,7 @@ export interface FakeSong {
   streamUrl: string;
   durationSeconds: number;
   releaseDate: string;
+  originalReleaseDate: null;
   source: string;
   album: null;
   movie: string | null;
@@ -25,6 +26,7 @@ export const song = (id: number, title: string, artist = 'Arijit Singh', release
   streamUrl: `/media/${id}.wav`,
   durationSeconds: 2,
   releaseDate,
+  originalReleaseDate: null,
   source: 'audius',
   album: null,
   movie,
@@ -33,6 +35,20 @@ export const song = (id: number, title: string, artist = 'Arijit Singh', release
   liked: false,
   downloadStatus: 'NONE',
 });
+
+const inFourHours = () => new Date(Date.now() + 4 * 3600_000).toISOString();
+
+/** Same rules as the backend: latest = last 12 months, the 50s folder also holds older songs. */
+function inDecade(releaseDate: string, key: string): boolean {
+  if (key === 'latest') {
+    const yearAgo = new Date();
+    yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+    return new Date(releaseDate) >= yearAgo;
+  }
+  const year = Number(releaseDate.slice(0, 4));
+  const decade = Number(key);
+  return decade === 1950 ? year < 1960 : year >= decade && year < decade + 10;
+}
 
 /** 2 seconds of silence – a real, playable audio file for the browser. */
 function silentWav(seconds = 2, rate = 8000): Buffer {
@@ -46,8 +62,17 @@ function silentWav(seconds = 2, rate = 8000): Buffer {
 }
 
 /** In-memory stand-in for the Spring Boot API, so browser tests are deterministic. */
-export async function fakeBackend(page: Page, initial: FakeSong[]) {
+export async function fakeBackend(page: Page, initial: FakeSong[], { loggedIn = true } = {}) {
   const songs = [...initial];
+  // The app shows the login page first; most journeys start already logged in.
+  if (loggedIn) {
+    await page.addInitScript(() => {
+      if (!sessionStorage.getItem('e2e.seeded')) {
+        sessionStorage.setItem('e2e.seeded', '1');
+        localStorage.setItem('dhun.session', JSON.stringify({ token: 'e2e-token', username: 'riya', expiresAt: new Date(Date.now() + 4 * 3600_000).toISOString() }));
+      }
+    });
+  }
   const liked = new Map<number, string>();
   const history: { id: number; songId: number; playedAt: string }[] = [];
   const downloaded = new Set<number>();
@@ -65,30 +90,64 @@ export async function fakeBackend(page: Page, initial: FakeSong[]) {
     const path = url.pathname;
     const method = req.method();
 
+    if (method === 'POST' && (path === '/api/auth/login' || path === '/api/auth/signup')) {
+      const { username, password } = JSON.parse(req.postData() ?? '{}') as { username: string; password: string };
+      if (password !== 'secret-123') return json(route, { detail: 'Wrong username or password' }, 401);
+      return json(route, { token: `token-${username}`, username, expiresAt: inFourHours() }, path.endsWith('signup') ? 201 : 200);
+    }
+    if (method === 'POST' && path === '/api/auth/reset-password') {
+      const { username } = JSON.parse(req.postData() ?? '{}') as { username: string };
+      return json(route, { token: `token-${username}`, username, expiresAt: inFourHours() });
+    }
+    if (method === 'POST' && path === '/api/auth/logout') return route.fulfill({ status: 204 });
     if (method === 'GET' && path === '/api/songs/new') return json(route, songs.map(view));
     if (method === 'GET' && path === '/api/songs') {
       const q = (url.searchParams.get('q') ?? '').toLowerCase();
       const onlyDownloaded = url.searchParams.get('downloaded') === 'true';
-      const year = url.searchParams.get('year');
+      const decade = url.searchParams.get('decade');
       const artist = url.searchParams.get('artist');
       const movie = url.searchParams.get('movie');
       return json(route, pageOf(songs
         .filter((s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q))
         .filter((s) => !onlyDownloaded || downloaded.has(s.id))
-        .filter((s) => !year || s.releaseDate.startsWith(year))
+        .filter((s) => !decade || inDecade(s.releaseDate, decade))
         .filter((s) => !artist || s.artist === artist)
         .filter((s) => !movie || s.movie === movie)
         .map(view)));
     }
-    const browseMatch = path.match(/^\/api\/browse\/(years|artists|movies)$/);
+    if (method === 'GET' && path === '/api/search') {
+      const q = (url.searchParams.get('q') ?? '').trim().toLowerCase();
+      const has = (v: string | null) => !!v && v.toLowerCase().includes(q);
+      const folders = (pick: (s: FakeSong) => string | null) => {
+        const counts = new Map<string, number>();
+        songs.forEach((s) => { const k = pick(s); if (has(k)) counts.set(k!, (counts.get(k!) ?? 0) + 1); });
+        return [...counts].map(([key, songCount]) => ({ key, title: key, songCount, imageUrl: null }));
+      };
+      return json(route, {
+        query: q,
+        songs: q ? songs.filter((s) => has(s.title) || has(s.artist) || has(s.movie)).map(view) : [],
+        artists: q ? folders((s) => s.artist) : [],
+        movies: q ? folders((s) => s.movie) : [],
+      });
+    }
+    if (method === 'GET' && path === '/api/browse/decades') {
+      const keys = ['latest', '2020', '2010', '2000', '1990', '1980', '1970', '1960', '1950'];
+      return json(route, keys.map((key) => ({
+        key,
+        title: key === 'latest' ? 'Latest' : `${key.slice(2)}s`,
+        songCount: songs.filter((s) => inDecade(s.releaseDate, key)).length,
+        imageUrl: null,
+      })));
+    }
+    const browseMatch = path.match(/^\/api\/browse\/(artists|movies)$/);
     if (method === 'GET' && browseMatch) {
       const keyOf = (s: FakeSong) =>
-        browseMatch[1] === 'years' ? s.releaseDate.slice(0, 4) : browseMatch[1] === 'artists' ? s.artist : s.movie;
+        browseMatch[1] === 'artists' ? s.artist : s.movie;
       const counts = new Map<string, number>();
       songs.forEach((s) => { const k = keyOf(s); if (k) counts.set(k, (counts.get(k) ?? 0) + 1); });
       const folders = [...counts.entries()]
         .map(([key, songCount]) => ({ key, title: key, songCount, imageUrl: null }))
-        .sort((a, b) => (browseMatch[1] === 'years' ? b.key.localeCompare(a.key) : b.songCount - a.songCount || a.key.localeCompare(b.key)));
+        .sort((a, b) => b.songCount - a.songCount || a.key.localeCompare(b.key));
       return json(route, folders);
     }
     if (method === 'POST' && path === '/api/likes/batch') {

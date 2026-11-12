@@ -16,5 +16,8 @@ spring:
       group-id: music-acceptance
 ---
 musicapp:
+  enrichment:
+    initial-delay: 1h   # acceptance tests trigger the lookup explicitly
+    min-interval: 0ms
   download:
     max-bytes: 10485760

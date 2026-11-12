@@ -39,6 +39,7 @@ export function song(id: number, title: string, extra: Partial<Song> = {}): Song
     streamUrl: `https://stream.test/${id}`,
     durationSeconds: 200,
     releaseDate: '2024-01-01',
+    originalReleaseDate: null,
     source: 'audius',
     addedAt: null,
     liked: false,

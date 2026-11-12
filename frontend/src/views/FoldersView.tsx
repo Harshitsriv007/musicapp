@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { Folder, FolderType } from '../api/types';
+import { ErrorState } from '../components/ErrorState';
 import { FolderCard } from '../components/FolderCard';
 import { FILTER_OF, href } from '../lib/routes';
 
-const TITLES: Record<FolderType, string> = { years: 'Songs by year', artists: 'Artists', movies: 'Movies & albums' };
+const TITLES: Record<FolderType, string> = { decades: 'Songs by decade', artists: 'Artists', movies: 'Movies & albums' };
 
 /** All folders of one kind (every year / artist / movie), with a filter box. */
 export function FoldersView({ type }: { type: FolderType }) {
@@ -35,7 +36,7 @@ export function FoldersView({ type }: { type: FolderType }) {
           {folders && <p className="view-head__sub">{folders.length} folders</p>}
         </div>
       </div>
-      {type !== 'years' && (
+      {type !== 'decades' && (
         <input
           className="search"
           type="search"
@@ -45,7 +46,7 @@ export function FoldersView({ type }: { type: FolderType }) {
           onChange={(e) => setFilter(e.target.value)}
         />
       )}
-      {error && <p className="state state--error" role="alert">{error}</p>}
+      {error && <ErrorState message={error} />}
       {!folders && !error && <p className="state">Loading…</p>}
       {folders && shown.length === 0 && <p className="state">No folders here yet.</p>}
       <div className="folder-grid">

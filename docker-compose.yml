@@ -67,9 +67,13 @@ services:
       INGESTION_CRON: ${INGESTION_CRON:-0 */15 * * * *}
       INGESTION_RUN_ON_STARTUP: ${INGESTION_RUN_ON_STARTUP:-true}
       DOWNLOAD_MAX_BYTES: ${DOWNLOAD_MAX_BYTES:-104857600}
+      ENRICHMENT_ENABLED: ${ENRICHMENT_ENABLED:-true}
+      MUSICBRAINZ_USER_AGENT: ${MUSICBRAINZ_USER_AGENT:-DhunMusicApp/1.0 ( self-hosted )}
       INGESTION_QUERIES: ${INGESTION_QUERIES:-bollywood,hindi songs,arijit singh,bollywood romantic,punjabi}
       JAMENDO_ENABLED: ${JAMENDO_ENABLED:-false}
       JAMENDO_CLIENT_ID: ${JAMENDO_CLIENT_ID:-}
+      PASSWORD_RESET_ENABLED: ${PASSWORD_RESET_ENABLED:-true}
+      SESSION_TTL: ${SESSION_TTL:-4h}
     ports:
       - "8080:8080"
     depends_on:

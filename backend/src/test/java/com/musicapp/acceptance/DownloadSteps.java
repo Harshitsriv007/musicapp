@@ -8,6 +8,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.musicapp.repository.SongRepository;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -80,6 +81,23 @@ public class DownloadSteps {
         assertThat(song(title).get("streamUrl").asText()).contains("/v1/tracks/");
     }
 
+    @Then("{string} is not downloaded for {string}")
+    public void notDownloadedFor(String title, String user) {
+        JsonNode song = api.get("/api/songs/" + idOf(title), user);
+        assertThat(song.get("downloadStatus").asText()).isEqualTo("NONE");
+        assertThat(song.get("streamUrl").asText()).contains("/v1/tracks/");
+    }
+
+    @Then("{string} is downloaded for {string}")
+    public void downloadedFor(String title, String user) {
+        assertThat(api.get("/api/songs/" + idOf(title), user).get("downloadStatus").asText()).isEqualTo("DOWNLOADED");
+    }
+
+    @Then("the downloaded songs of {string} are empty")
+    public void downloadedSongsEmpty(String user) {
+        assertThat(api.get("/api/songs?downloaded=true", user).get("content")).isEmpty();
+    }
+
     @Then("the audio of {string} played from our API matches the original")
     public void audioMatches(String title) {
         ResponseEntity<byte[]> response = audio(title, null);
@@ -132,7 +150,7 @@ public class DownloadSteps {
         return http.exchange("/api/songs/" + idOf(title) + "/audio", HttpMethod.GET, new HttpEntity<>(headers), byte[].class);
     }
 
-    private com.fasterxml.jackson.databind.JsonNode song(String title) {
+    private JsonNode song(String title) {
         return api.get("/api/songs/" + idOf(title), "riya");
     }
 

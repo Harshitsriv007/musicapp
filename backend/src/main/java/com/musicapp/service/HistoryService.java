@@ -1,7 +1,6 @@
 package com.musicapp.service;
 
 import com.musicapp.domain.PlayHistory;
-import com.musicapp.repository.LikedSongRepository;
 import com.musicapp.repository.PlayHistoryRepository;
 import com.musicapp.repository.SongRepository;
 import com.musicapp.web.dto.HistoryEntryDto;
@@ -9,7 +8,8 @@ import com.musicapp.web.dto.PageResponse;
 import com.musicapp.web.dto.SongDto;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Set;
+import java.util.List;
+import java.util.stream.IntStream;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,13 +19,13 @@ public class HistoryService {
 
     private final PlayHistoryRepository history;
     private final SongRepository songs;
-    private final LikedSongRepository likes;
+    private final SongService songService;
     private final Clock clock;
 
-    public HistoryService(PlayHistoryRepository history, SongRepository songs, LikedSongRepository likes, Clock clock) {
+    public HistoryService(PlayHistoryRepository history, SongRepository songs, SongService songService, Clock clock) {
         this.history = history;
         this.songs = songs;
-        this.likes = likes;
+        this.songService = songService;
         this.clock = clock;
     }
 
@@ -33,18 +33,16 @@ public class HistoryService {
     public HistoryEntryDto recordPlay(String userId, Long songId) {
         var song = songs.findById(songId).orElseThrow(() -> new SongNotFoundException(songId));
         var saved = history.save(new PlayHistory(userId, song, Instant.now(clock)));
-        return new HistoryEntryDto(saved.getId(), SongDto.from(song, likes.existsByUserIdAndSongId(userId, songId)),
+        return new HistoryEntryDto(saved.getId(), songService.toDtos(userId, List.of(song)).getFirst(),
                 saved.getPlayedAt());
     }
 
     @Transactional(readOnly = true)
     public PageResponse<HistoryEntryDto> list(String userId, int page, int size) {
         return PageResponse.of(history.findByUser(userId, PageRequest.of(page, size)), entries -> {
-            Set<Long> liked = entries.isEmpty() ? Set.of()
-                    : likes.findLikedSongIds(userId, entries.stream().map(h -> h.getSong().getId()).toList());
-            return entries.stream()
-                    .map(h -> new HistoryEntryDto(h.getId(), SongDto.from(h.getSong(), liked.contains(h.getSong().getId())),
-                            h.getPlayedAt()))
+            List<SongDto> dtos = songService.toDtos(userId, entries.stream().map(PlayHistory::getSong).toList());
+            return IntStream.range(0, entries.size())
+                    .mapToObj(i -> new HistoryEntryDto(entries.get(i).getId(), dtos.get(i), entries.get(i).getPlayedAt()))
                     .toList();
         });
     }

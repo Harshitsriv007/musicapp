@@ -10,13 +10,13 @@ export function FolderCard({ folder, filter }: { folder: Folder; filter: FolderF
   const hue = HUES[Math.abs(hash(folder.key)) % HUES.length];
   return (
     <a
-      className={`folder-card folder-card--${filter}`}
+      className={`folder-card folder-card--${filter}${folder.songCount === 0 ? ' folder-card--empty' : ''}`}
       href={href({ view: 'folder', filter, key: folder.key })}
       aria-label={`${folder.title}, ${count}`}
     >
       <div className="folder-card__cover">
-        {filter === 'year' ? (
-          <div className="year-tile" style={{ ['--hue' as string]: hue }}>
+        {filter === 'decade' ? (
+          <div className={`year-tile${folder.key === 'latest' ? ' year-tile--latest' : ''}`} style={{ ['--hue' as string]: hue }}>
             <span>{folder.title}</span>
           </div>
         ) : (

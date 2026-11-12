@@ -12,10 +12,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.musicapp.domain.DownloadStatus;
 import com.musicapp.domain.Song;
 import com.musicapp.repository.LikedSongRepository;
 import com.musicapp.repository.SongRepository;
+import com.musicapp.repository.UserDownloadRepository;
 import com.musicapp.web.dto.SongDto;
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +30,9 @@ class SongServiceTest {
 
     private final SongRepository songs = mock(SongRepository.class);
     private final LikedSongRepository likes = mock(LikedSongRepository.class);
-    private final SongService service = new SongService(songs, likes);
+    private final UserDownloadRepository downloads = mock(UserDownloadRepository.class);
+    private final SongService service = new SongService(songs, likes, downloads,
+            java.time.Clock.fixed(java.time.Instant.parse("2026-06-15T00:00:00Z"), java.time.ZoneOffset.UTC));
 
     @Test
     void upsertCreatesUnknownSong() {
@@ -83,11 +85,24 @@ class SongServiceTest {
         Song s = song(7, "Kesariya");
         s.markDownloaded("audio/mpeg", 100, java.time.Instant.now());
 
-        SongDto dto = SongDto.from(s, false);
+        SongDto dto = SongDto.from(s, false, true);
 
         assertThat(dto.streamUrl()).isEqualTo("/api/songs/7/audio");
         assertThat(dto.downloadStatus()).isEqualTo("DOWNLOADED");
-        assertThat(SongDto.from(song(8, "X"), false).streamUrl()).isEqualTo("https://stream/8");
+        assertThat(SongDto.from(song(8, "X"), false, false).streamUrl()).isEqualTo("https://stream/8");
+    }
+
+    @Test
+    void someoneElsesDownloadIsNotShownAsYours() {
+        Song s = song(7, "Kesariya");
+        s.markDownloaded("audio/mpeg", 100, java.time.Instant.now());
+        when(songs.findById(7L)).thenReturn(Optional.of(s));
+        when(downloads.findDownloadedSongIds(eq("acct_1"), anyCollection())).thenReturn(Set.of(7L));
+
+        assertThat(service.get("acct_1", 7L).downloadStatus()).isEqualTo("DOWNLOADED");
+        assertThat(service.get("acct_2", 7L).downloadStatus()).isEqualTo("NONE");
+        assertThat(service.get("acct_2", 7L).streamUrl()).isEqualTo("https://stream/7");
+        assertThat(service.get(null, 7L).downloadStatus()).isEqualTo("NONE");
     }
 
     @Test
@@ -103,34 +118,51 @@ class SongServiceTest {
 
     @Test
     void listUsesSearchWhenQueryGiven() {
-        when(songs.findFiltered(eq("arijit"), isNull(), isNull(), isNull(), isNull(), any()))
+        when(songs.findFiltered(eq("arijit"), isNull(), isNull(), isNull(), isNull(), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of(song(1, "A"))));
         when(likes.findLikedSongIds(any(), anyCollection())).thenReturn(Set.of());
 
         var page = service.list("riya", new SongFilter("  arijit ", false, null, null, null), 0, 10);
 
         assertThat(page.content()).hasSize(1);
-        verify(songs).findFiltered(eq("arijit"), isNull(), isNull(), isNull(), isNull(), any());
+        verify(songs).findFiltered(eq("arijit"), isNull(), isNull(), isNull(), isNull(), isNull(), any());
     }
 
     @Test
     void listFiltersByFolder() {
-        when(songs.findFiltered(isNull(), isNull(), eq(2024), eq("Arijit Singh"), eq("Brahmastra"), any()))
-                .thenReturn(new PageImpl<>(List.of()));
+        when(songs.findFiltered(any(), any(), any(), any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of()));
 
-        service.list("riya", new SongFilter(null, false, 2024, " Arijit Singh ", "Brahmastra"), 0, 10);
+        service.list("riya", new SongFilter(null, false, "1990", " Arijit Singh ", "Brahmastra"), 0, 10);
 
-        verify(songs).findFiltered(isNull(), isNull(), eq(2024), eq("Arijit Singh"), eq("Brahmastra"), any());
+        verify(songs).findFiltered(isNull(), isNull(), eq(java.time.LocalDate.of(1990, 1, 1)),
+                eq(java.time.LocalDate.of(1999, 12, 31)), eq("Arijit Singh"), eq("Brahmastra"), any());
     }
 
     @Test
-    void listCanBeRestrictedToDownloadedSongs() {
-        when(songs.findFiltered(isNull(), eq(DownloadStatus.DOWNLOADED), isNull(), isNull(), isNull(), any()))
+    void latestFolderIsTheLastTwelveMonths() {
+        when(songs.findFiltered(any(), any(), any(), any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of()));
+
+        service.list("riya", new SongFilter(null, false, "latest", null, null), 0, 10);
+
+        verify(songs).findFiltered(isNull(), isNull(), eq(java.time.LocalDate.of(2025, 6, 15)), isNull(), isNull(), isNull(), any());
+    }
+
+    @Test
+    void listCanBeRestrictedToThisListenersDownloads() {
+        when(songs.findFiltered(isNull(), eq("riya"), isNull(), isNull(), isNull(), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of()));
 
         service.list("riya", new SongFilter(" ", true, null, null, null), 0, 10);
 
-        verify(songs).findFiltered(isNull(), eq(DownloadStatus.DOWNLOADED), isNull(), isNull(), isNull(), any());
+        verify(songs).findFiltered(isNull(), eq("riya"), isNull(), isNull(), isNull(), isNull(), any());
+    }
+
+    @Test
+    void visitorsWithoutAnAccountHaveNoDownloads() {
+        var page = service.list(null, new SongFilter(null, true, null, null, null), 0, 10);
+
+        assertThat(page.content()).isEmpty();
+        org.mockito.Mockito.verifyNoInteractions(songs);
     }
 
     @Test

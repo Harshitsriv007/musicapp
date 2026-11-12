@@ -20,7 +20,7 @@ public class BrowseController {
         this.browseService = browseService;
     }
 
-    /** {@code type} is years, artists or movies. Songs of a folder: GET /api/songs?year=|artist=|movie= */
+    /** {@code type} is decades, artists or movies. Songs of a folder: GET /api/songs?decade=|artist=|movie= */
     @GetMapping("/api/browse/{type}")
     public List<FolderDto> folders(@PathVariable String type,
                                    @RequestParam(defaultValue = "500") @Min(1) @Max(1000) int limit) {

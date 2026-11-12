@@ -66,6 +66,13 @@ public class Song {
     @Column(name = "download_error", length = 512)
     private String downloadError;
 
+    /** Original release (MusicBrainz); release_date is when it was uploaded. */
+    @Column(name = "original_release_date")
+    private LocalDate originalReleaseDate;
+
+    @Column(name = "metadata_checked_at")
+    private Instant metadataCheckedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -111,6 +118,10 @@ public class Song {
     public LocalDate getReleaseDate() { return releaseDate; }
     public void setReleaseDate(LocalDate releaseDate) { this.releaseDate = releaseDate; }
     public Instant getCreatedAt() { return createdAt; }
+    public LocalDate getOriginalReleaseDate() { return originalReleaseDate; }
+    public void setOriginalReleaseDate(LocalDate originalReleaseDate) { this.originalReleaseDate = originalReleaseDate; }
+    public Instant getMetadataCheckedAt() { return metadataCheckedAt; }
+    public void setMetadataCheckedAt(Instant metadataCheckedAt) { this.metadataCheckedAt = metadataCheckedAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 
     public DownloadStatus getDownloadStatus() { return downloadStatus; }

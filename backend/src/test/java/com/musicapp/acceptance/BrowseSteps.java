@@ -1,13 +1,21 @@
 package com.musicapp.acceptance;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.cucumber.java.en.Given;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,6 +27,9 @@ public class BrowseSteps {
 
     @Autowired
     MusicApi api;
+
+    @Autowired
+    ObjectMapper json;
 
     @Then("the {string} folders are:")
     public void foldersAre(String type, DataTable expected) {
@@ -33,6 +44,27 @@ public class BrowseSteps {
         folderSongs(filter, key).forEach(s -> actual.add(s.get("title").asText()));
         List<String> expected = Arrays.stream(titles.split(", ")).map(t -> t.replace("\\\"", "\"")).toList();
         assertThat(actual).containsExactlyInAnyOrderElementsOf(expected);
+    }
+
+    @Given("MusicBrainz knows {string} by {string} was first released in {string}")
+    public void musicBrainzKnows(String title, String artist, String date) throws Exception {
+        String body = json.writeValueAsString(Map.of("recordings", List.of(Map.of(
+                "title", title, "score", 100, "first-release-date", date,
+                "artist-credit", List.of(Map.of("name", artist))))));
+        CucumberSpringConfiguration.MUSIC_API.stubFor(get(urlPathEqualTo("/ws/2/recording"))
+                .withQueryParam("query", containing("\"" + title + "\""))
+                .atPriority(1)
+                .willReturn(okJson(body)));
+    }
+
+    @When("the release-year lookup runs")
+    public void releaseYearLookupRuns() {
+        assertThat(api.send(HttpMethod.POST, "/api/admin/enrichment/run", null, Map.of()).value()).isEqualTo(202);
+    }
+
+    @Then("the {string} folder {string} eventually contains {string}")
+    public void folderEventuallyContains(String filter, String key, String titles) {
+        await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> folderContains(filter, key, titles));
     }
 
     @When("listener {string} likes every song in the {string} folder {string}")

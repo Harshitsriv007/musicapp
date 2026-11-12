@@ -3,7 +3,9 @@ package com.musicapp.download;
 import com.musicapp.config.AppProperties;
 import com.musicapp.domain.DownloadStatus;
 import com.musicapp.domain.Song;
+import com.musicapp.domain.UserDownload;
 import com.musicapp.repository.SongRepository;
+import com.musicapp.repository.UserDownloadRepository;
 import com.musicapp.service.SongNotFoundException;
 import com.musicapp.service.SongUpdatesBroadcaster;
 import com.musicapp.web.dto.SongDto;
@@ -13,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,9 @@ import org.springframework.transaction.support.TransactionTemplate;
  * Copies the audio of songs the user chose to download from the external music API into
  * MySQL, so they replay from our own database: no repeated API calls and no buffering.
  * Songs that are not downloaded keep streaming live from the music API.
+ *
+ * <p>Each listener has their own Downloads list ({@code user_downloads}); the audio is stored once
+ * per song and only deleted when the last listener removes it.
  */
 @Service
 public class DownloadService {
@@ -34,6 +40,7 @@ public class DownloadService {
     public record AudioInfo(long size, String contentType) {}
 
     private final SongRepository songs;
+    private final UserDownloadRepository downloads;
     private final AudioStorage storage;
     private final AudioFetcher fetcher;
     private final DownloadRequestProducer producer;
@@ -42,10 +49,11 @@ public class DownloadService {
     private final Clock clock;
     private final AppProperties.Download config;
 
-    public DownloadService(SongRepository songs, AudioStorage storage, AudioFetcher fetcher,
-                           DownloadRequestProducer producer, SongUpdatesBroadcaster broadcaster,
+    public DownloadService(SongRepository songs, UserDownloadRepository downloads, AudioStorage storage,
+                           AudioFetcher fetcher, DownloadRequestProducer producer, SongUpdatesBroadcaster broadcaster,
                            TransactionTemplate tx, Clock clock, AppProperties props) {
         this.songs = songs;
+        this.downloads = downloads;
         this.storage = storage;
         this.fetcher = fetcher;
         this.producer = producer;
@@ -55,14 +63,23 @@ public class DownloadService {
         this.config = props.download();
     }
 
-    /** Queues downloads; songs already downloaded or in progress are left alone. */
+    /**
+     * Adds the songs to this listener's Downloads and queues the ones whose audio is not stored yet.
+     * Songs already stored (by anyone) are in the list straight away.
+     */
     @Transactional
-    public List<DownloadStatusDto> request(Collection<Long> songIds) {
+    public List<DownloadStatusDto> request(String userId, Collection<Long> songIds) {
         List<Long> ids = List.copyOf(new LinkedHashSet<>(songIds));
         List<Song> found = songs.findAllById(ids);
         if (found.isEmpty()) {
             throw new SongNotFoundException(ids.getFirst());
         }
+        Set<Long> already = downloads.findDownloadedSongIds(userId, found.stream().map(Song::getId).toList());
+        Instant now = Instant.now(clock);
+        downloads.saveAll(found.stream()
+                .filter(s -> !already.contains(s.getId()))
+                .map(s -> new UserDownload(userId, s, now))
+                .toList());
         List<Long> queued = new ArrayList<>();
         for (Song song : found) {
             if (song.getDownloadStatus().canRequest()) {
@@ -79,7 +96,8 @@ public class DownloadService {
     public void download(Long songId) {
         Song song = tx.execute(status -> {
             Song s = songs.findById(songId).orElse(null);
-            if (s == null || s.getDownloadStatus() == DownloadStatus.DOWNLOADED) {
+            // Skip when every listener removed it from their Downloads before it started.
+            if (s == null || s.getDownloadStatus() == DownloadStatus.DOWNLOADED || !downloads.existsBySongId(songId)) {
                 return null;
             }
             s.markDownloading();
@@ -88,7 +106,7 @@ public class DownloadService {
         if (song == null) {
             return;
         }
-        broadcaster.songUpdated(SongDto.from(song, false));
+        broadcaster.songUpdated(SongDto.from(song, false, true));
 
         try (FetchedAudio audio = fetcher.open(song.getStreamUrl())) {
             if (audio.contentLength() > config.maxBytes()) {
@@ -106,13 +124,18 @@ public class DownloadService {
         }
     }
 
+    /** Removes the song from this listener's Downloads; the audio is deleted once nobody keeps it. */
     @Transactional
-    public void remove(Long songId) {
+    public void remove(String userId, Long songId) {
         Song song = songs.findById(songId).orElseThrow(() -> new SongNotFoundException(songId));
+        downloads.deleteByUserAndSong(userId, songId);
+        if (downloads.existsBySongId(songId)) {
+            return;
+        }
         storage.delete(songId);
         song.clearDownload();
         songs.save(song);
-        afterCommit(() -> broadcaster.songUpdated(SongDto.from(song, false)));
+        afterCommit(() -> broadcaster.songUpdated(SongDto.from(song, false, true)));
     }
 
     @Transactional(readOnly = true)
@@ -134,7 +157,7 @@ public class DownloadService {
             return songs.save(s);
         }).orElse(null));
         if (updated != null) {
-            broadcaster.songUpdated(SongDto.from(updated, false));
+            broadcaster.songUpdated(SongDto.from(updated, false, true));
         }
     }
 

@@ -3,7 +3,7 @@ package com.musicapp.browse;
 import java.util.Locale;
 
 public enum FolderType {
-    YEARS,
+    DECADES,
     ARTISTS,
     MOVIES;
 
@@ -11,7 +11,7 @@ public enum FolderType {
         try {
             return valueOf(raw.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException | NullPointerException e) {
-            throw new IllegalArgumentException("Unknown folder type '" + raw + "' (use years, artists or movies)");
+            throw new IllegalArgumentException("Unknown folder type '" + raw + "' (use decades, artists or movies)");
         }
     }
 }
