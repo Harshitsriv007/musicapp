@@ -72,7 +72,10 @@ services:
       INGESTION_QUERIES: ${INGESTION_QUERIES:-bollywood,hindi songs,arijit singh,bollywood romantic,punjabi}
       JAMENDO_ENABLED: ${JAMENDO_ENABLED:-false}
       JAMENDO_CLIENT_ID: ${JAMENDO_CLIENT_ID:-}
-      JAMENDO_TAGS: ${JAMENDO_TAGS:-indian+bollywood+hindi+world}
+      JAMENDO_TAGS: ${JAMENDO_TAGS:-indian+bollywood+hindi}
+      JAMENDO_SEARCHES: ${JAMENDO_SEARCHES:-bollywood,hindi,punjabi}
+      JAMENDO_MAX_TRACKS: ${JAMENDO_MAX_TRACKS:-2000}
+      JAMENDO_FULL_SYNC_INTERVAL: ${JAMENDO_FULL_SYNC_INTERVAL:-6h}
       PASSWORD_RESET_ENABLED: ${PASSWORD_RESET_ENABLED:-true}
       SESSION_TTL: ${SESSION_TTL:-4h}
     ports:

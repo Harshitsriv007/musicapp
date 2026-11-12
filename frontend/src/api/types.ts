@@ -23,8 +23,8 @@ export interface Song {
   /** Track page on the provider (Jamendo) – its terms require crediting and linking back. */
   shareUrl: string | null;
   licenseUrl: string | null;
-  /** False when the provider forbids storing the audio: no download button. */
-  downloadAllowed: boolean;
+  /** False when the provider forbids storing the audio: no download button. Missing = allowed. */
+  downloadAllowed?: boolean;
 }
 
 export type FolderType = 'decades' | 'artists' | 'movies';

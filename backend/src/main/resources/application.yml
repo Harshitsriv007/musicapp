@@ -77,8 +77,14 @@ musicapp:
       enabled: ${JAMENDO_ENABLED:false}
       base-url: ${JAMENDO_BASE_URL:https://api.jamendo.com}
       client-id: ${JAMENDO_CLIENT_ID:}
-      # Any of these tags (Jamendo has no Bollywood labels; "indian"/"world" find the closest indie music).
-      tags: ${JAMENDO_TAGS:indian+bollywood+hindi+world}
+      # A track matching any of these tags is fetched (Jamendo is indie music: no label Bollywood hits).
+      tags: ${JAMENDO_TAGS:indian+bollywood+hindi}
+      # Also searched by name on every full sync.
+      searches: ${JAMENDO_SEARCHES:bollywood,hindi,punjabi}
+      # Full sync = every matching track (most popular first), up to max-tracks per tag list / search.
+      max-tracks: ${JAMENDO_MAX_TRACKS:2000}
+      full-sync-interval: ${JAMENDO_FULL_SYNC_INTERVAL:6h}
+      request-interval: ${JAMENDO_REQUEST_INTERVAL:1s}
   enrichment:
     # Look up each song's original release year in MusicBrainz (free) for the decade folders.
     enabled: ${ENRICHMENT_ENABLED:true}

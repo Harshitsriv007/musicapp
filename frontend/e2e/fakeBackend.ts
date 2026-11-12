@@ -16,6 +16,9 @@ export interface FakeSong {
   addedAt: string;
   liked: boolean;
   downloadStatus: 'NONE' | 'DOWNLOADED';
+  shareUrl: string | null;
+  licenseUrl: string | null;
+  downloadAllowed: boolean;
 }
 
 export const song = (id: number, title: string, artist = 'Arijit Singh', releaseDate = '2024-01-01', movie: string | null = null): FakeSong => ({
@@ -34,6 +37,9 @@ export const song = (id: number, title: string, artist = 'Arijit Singh', release
   addedAt: new Date().toISOString(),
   liked: false,
   downloadStatus: 'NONE',
+  shareUrl: null,
+  licenseUrl: null,
+  downloadAllowed: true,
 });
 
 const inFourHours = () => new Date(Date.now() + 4 * 3600_000).toISOString();

@@ -52,7 +52,29 @@ public record AppProperties(Ingestion ingestion, Kafka kafka, Providers provider
 
     public record Audius(boolean enabled, String baseUrl, String appName) {}
 
-    public record Jamendo(boolean enabled, String baseUrl, String clientId, String tags) {}
+    /**
+     * @param tags             Jamendo tags, "+"-separated; a track matching any of them is fetched
+     * @param searches         free-text searches also run on a full sync (track, album, artist names)
+     * @param maxTracks        most tracks fetched per tag list or search term on a full sync
+     * @param fullSyncInterval time between full syncs; other runs only fetch the newest tracks
+     * @param requestInterval  pause between requests (Jamendo returns empty pages when called too fast)
+     */
+    public record Jamendo(boolean enabled, String baseUrl, String clientId, String tags, List<String> searches,
+                          int maxTracks, java.time.Duration fullSyncInterval, java.time.Duration requestInterval) {
+        public Jamendo {
+            tags = tags == null ? "" : tags.strip();
+            searches = searches == null ? List.of()
+                    : searches.stream().map(String::strip).filter(s -> !s.isEmpty()).toList();
+            maxTracks = maxTracks <= 0 ? 2000 : maxTracks;
+            fullSyncInterval = fullSyncInterval == null ? java.time.Duration.ofHours(6) : fullSyncInterval;
+            requestInterval = requestInterval == null ? java.time.Duration.ofSeconds(1) : requestInterval;
+        }
+
+        /** For tests and callers that only care about the tags. */
+        public static Jamendo of(boolean enabled, String baseUrl, String clientId, String tags) {
+            return new Jamendo(enabled, baseUrl, clientId, tags, List.of(), 0, null, java.time.Duration.ZERO);
+        }
+    }
 
     public record Cors(List<String> allowedOrigins) {
         public Cors {
