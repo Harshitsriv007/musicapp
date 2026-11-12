@@ -32,6 +32,10 @@ public class AccountException extends RuntimeException {
         return new AccountException(HttpStatus.FORBIDDEN, "Password reset is turned off on this server");
     }
 
+    public static AccountException loginRequired() {
+        return new AccountException(HttpStatus.UNAUTHORIZED, "Please log in");
+    }
+
     public static AccountException notLoggedIn() {
         return new AccountException(HttpStatus.UNAUTHORIZED, "Session expired, please log in again");
     }

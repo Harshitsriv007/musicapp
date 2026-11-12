@@ -75,4 +75,6 @@ export interface LikedEntry {
 export interface AuthResponse {
   token: string;
   username: string;
+  /** ISO timestamp; after it the listener must log in again. */
+  expiresAt: string;
 }

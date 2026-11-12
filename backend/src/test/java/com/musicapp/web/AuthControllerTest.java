@@ -15,6 +15,7 @@ import com.musicapp.account.AccountException;
 import com.musicapp.account.AccountService;
 import com.musicapp.account.Session;
 import com.musicapp.service.LikeService;
+import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,17 +36,19 @@ class AuthControllerTest {
     @MockitoBean
     LikeService likeService;
 
+    private static final Instant EXPIRES = Instant.parse("2026-01-01T14:00:00Z");
     private static final String BODY = "{\"username\":\"riya\",\"password\":\"secret-123\"}";
 
     @Test
     void signUpReturnsTokenAndPassesDeviceId() throws Exception {
-        when(accountService.signUp("riya", "secret-123", "device1")).thenReturn(new Session("tok", 7, "riya"));
+        when(accountService.signUp("riya", "secret-123", "device1")).thenReturn(new Session("tok", 7, "riya", EXPIRES));
 
         mvc.perform(post("/api/auth/signup").header("X-User-Id", "device1")
                         .contentType(MediaType.APPLICATION_JSON).content(BODY))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token").value("tok"))
-                .andExpect(jsonPath("$.username").value("riya"));
+                .andExpect(jsonPath("$.username").value("riya"))
+                .andExpect(jsonPath("$.expiresAt").value("2026-01-01T14:00:00Z"));
     }
 
     @Test
@@ -74,7 +77,7 @@ class AuthControllerTest {
 
     @Test
     void resetPasswordReturnsANewSession() throws Exception {
-        when(accountService.resetPassword("riya", "new-pass-1", "device1")).thenReturn(new Session("tok2", 7, "riya"));
+        when(accountService.resetPassword("riya", "new-pass-1", "device1")).thenReturn(new Session("tok2", 7, "riya", EXPIRES));
 
         mvc.perform(post("/api/auth/reset-password").header("X-User-Id", "device1")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"username\":\"riya\",\"newPassword\":\"new-pass-1\"}"))
@@ -84,7 +87,7 @@ class AuthControllerTest {
 
     @Test
     void meAndLogout() throws Exception {
-        when(accountService.authenticate("tok")).thenReturn(Optional.of(new Session("tok", 7, "riya")));
+        when(accountService.authenticate("tok")).thenReturn(Optional.of(new Session("tok", 7, "riya", EXPIRES)));
 
         mvc.perform(get("/api/auth/me").header("Authorization", "Bearer tok"))
                 .andExpect(status().isOk())
@@ -97,7 +100,7 @@ class AuthControllerTest {
 
     @Test
     void loggedInRequestsUseTheAccountInsteadOfTheDevice() throws Exception {
-        when(accountService.authenticate("tok")).thenReturn(Optional.of(new Session("tok", 7, "riya")));
+        when(accountService.authenticate("tok")).thenReturn(Optional.of(new Session("tok", 7, "riya", EXPIRES)));
 
         mvc.perform(put("/api/likes/5").header("Authorization", "Bearer tok").header("X-User-Id", "device1"))
                 .andExpect(status().isNoContent());
@@ -112,8 +115,11 @@ class AuthControllerTest {
     }
 
     @Test
-    void devicesCannotImpersonateAnAccount() throws Exception {
-        mvc.perform(put("/api/likes/5").header("X-User-Id", "acct_7")).andExpect(status().isBadRequest());
+    void personalDataNeedsALogin() throws Exception {
+        mvc.perform(put("/api/likes/5")).andExpect(status().isUnauthorized());
+        mvc.perform(put("/api/likes/5").header("X-User-Id", "device1")).andExpect(status().isUnauthorized());
+        mvc.perform(put("/api/likes/5").header("X-User-Id", "acct_7")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/likes")).andExpect(status().isUnauthorized());
         verifyNoInteractions(likeService);
     }
 }

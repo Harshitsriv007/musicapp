@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.musicapp.browse.FolderDto;
 import com.musicapp.repository.LikedSongRepository;
 import com.musicapp.repository.SongRepository;
+import com.musicapp.repository.UserDownloadRepository;
 import com.musicapp.web.dto.SongDto;
 import java.time.Clock;
 import java.util.List;
@@ -22,7 +23,7 @@ class SearchServiceTest {
 
     private final SongRepository songs = mock(SongRepository.class);
     private final LikedSongRepository likes = mock(LikedSongRepository.class);
-    private final SearchService service = new SearchService(songs, new SongService(songs, likes, Clock.systemUTC()));
+    private final SearchService service = new SearchService(songs, new SongService(songs, likes, mock(UserDownloadRepository.class), Clock.systemUTC()));
 
     @Test
     void searchesSongsArtistsAndMoviesCaseInsensitively() {

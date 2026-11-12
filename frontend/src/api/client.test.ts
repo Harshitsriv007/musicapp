@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getSession, setSession } from '../lib/session';
+import { getSession, sessionExpired, setSession } from '../lib/session';
+
+const LATER = new Date(Date.now() + 4 * 3600_000).toISOString();
 import { mockFetch, song } from '../test/fakes';
 import { api, ApiError, audioUrl } from './client';
 
@@ -79,7 +81,7 @@ describe('api client', () => {
   });
 
   it('sends the login token so likes and history follow the account', async () => {
-    const fetchMock = mockFetch({ 'POST /api/auth/login': { token: 'tok', username: 'riya' } });
+    const fetchMock = mockFetch({ 'POST /api/auth/login': { token: 'tok', username: 'riya', expiresAt: LATER } });
 
     const res = await api.logIn('riya', 'secret-123');
     setSession(res);
@@ -91,11 +93,22 @@ describe('api client', () => {
   });
 
   it('forgets an expired session', async () => {
-    setSession({ token: 'old', username: 'riya' });
+    setSession({ token: 'old', username: 'riya', expiresAt: LATER });
     mockFetch({ 'GET /api/likes': new Response(null, { status: 401 }) });
 
     await expect(api.liked()).rejects.toBeInstanceOf(ApiError);
     expect(getSession()).toBeNull();
+    expect(sessionExpired()).toBe(true);
+  });
+
+  it('stops sending a token once the session has run out', async () => {
+    setSession({ token: 'tok', username: 'riya', expiresAt: new Date(Date.now() - 1000).toISOString() });
+    const fetchMock = mockFetch({ 'GET /api/songs/new?limit=50': [] });
+
+    await api.newSongs();
+
+    expect(getSession()).toBeNull();
+    expect(headersOf(fetchMock.mock.calls[0][1]).Authorization).toBeUndefined();
   });
 
   it('surfaces the server error message', async () => {

@@ -23,7 +23,7 @@ public class SearchController {
     /** Search songs by name, artist or movie: GET /api/search?q=arijit */
     @GetMapping("/api/search")
     public SearchResultDto search(
-            @CurrentUser String userId,
+            @CurrentUser(required = false) String userId,
             @RequestParam(defaultValue = "") @Size(max = 100) String q,
             @RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit) {
         return searchService.search(userId, q, limit);

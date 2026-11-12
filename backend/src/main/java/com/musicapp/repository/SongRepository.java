@@ -1,6 +1,5 @@
 package com.musicapp.repository;
 
-import com.musicapp.domain.DownloadStatus;
 import com.musicapp.domain.Song;
 import java.time.LocalDate;
 import java.util.List;
@@ -15,10 +14,12 @@ public interface SongRepository extends JpaRepository<Song, Long> {
 
     Optional<Song> findBySourceAndExternalId(String source, String externalId);
 
-    /** Catalogue listing with optional text search and optional download-status filter. */
+    /** Catalogue listing with optional text search; {@code downloadedBy} limits it to that listener's downloads. */
     @Query("""
             select s from Song s
-            where (:status is null or s.downloadStatus = :status)
+            where (:downloadedBy is null
+                   or (s.downloadStatus = com.musicapp.domain.DownloadStatus.DOWNLOADED
+                       and exists (select 1 from UserDownload d where d.userId = :downloadedBy and d.song.id = s.id)))
               and (:releasedFrom is null or coalesce(s.originalReleaseDate, s.releaseDate) >= :releasedFrom)
               and (:releasedTo is null or coalesce(s.originalReleaseDate, s.releaseDate) <= :releasedTo)
               and (:artist is null or s.artist = :artist)
@@ -29,7 +30,7 @@ public interface SongRepository extends JpaRepository<Song, Long> {
                    or lower(s.album) like lower(concat('%', :q, '%'))
                    or lower(s.movie) like lower(concat('%', :q, '%')))
             """)
-    Page<Song> findFiltered(@Param("q") String query, @Param("status") DownloadStatus status,
+    Page<Song> findFiltered(@Param("q") String query, @Param("downloadedBy") String downloadedBy,
                             @Param("releasedFrom") LocalDate releasedFrom, @Param("releasedTo") LocalDate releasedTo,
                             @Param("artist") String artist, @Param("movie") String movie,
                             Pageable pageable);

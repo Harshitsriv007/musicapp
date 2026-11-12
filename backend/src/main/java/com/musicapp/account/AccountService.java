@@ -18,9 +18,11 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,10 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AccountService {
 
-    /** A session stays valid while it is used at least once in this period. */
-    static final Duration SESSION_IDLE_TIMEOUT = Duration.ofDays(180);
     /** last_used_at is written at most this often, not on every request. */
-    private static final Duration TOUCH_INTERVAL = Duration.ofHours(12);
+    private static final Duration TOUCH_INTERVAL = Duration.ofMinutes(15);
 
     private static final Pattern USERNAME = Pattern.compile("[a-z0-9_.-]{3,32}");
     private static final int MIN_PASSWORD = 8;
@@ -44,6 +44,8 @@ public class AccountService {
     private final PlayHistoryRepository history;
     private final Clock clock;
     private final boolean passwordResetEnabled;
+    /** How long a login lasts, however actively it is used. After that the listener must log in again. */
+    private final Duration sessionTtl;
     private final PasswordEncoder passwords = new BCryptPasswordEncoder();
     private final SecureRandom random = new SecureRandom();
     /** Compared against when the username is unknown, so both cases take the same time. */
@@ -51,7 +53,12 @@ public class AccountService {
 
     public AccountService(UserAccountRepository users, AuthSessionRepository sessions,
                           LikedSongRepository likes, PlayHistoryRepository history, Clock clock,
-                          @Value("${musicapp.auth.password-reset-enabled:true}") boolean passwordResetEnabled) {
+                          @Value("${musicapp.auth.password-reset-enabled:true}") boolean passwordResetEnabled,
+                          @Value("${musicapp.auth.session-ttl:4h}") Duration sessionTtl) {
+        if (sessionTtl.isNegative() || sessionTtl.isZero()) {
+            throw new IllegalArgumentException("musicapp.auth.session-ttl must be positive");
+        }
+        this.sessionTtl = sessionTtl;
         this.users = users;
         this.sessions = sessions;
         this.likes = likes;
@@ -119,7 +126,10 @@ public class AccountService {
         sessions.deleteById(hash(token));
     }
 
-    /** The account a bearer token belongs to, or empty if the token is unknown or expired. */
+    /**
+     * The account a bearer token belongs to, or empty if the token is unknown or expired. A session
+     * expires {@code sessionTtl} after login no matter how much it is used (activity does not extend it).
+     */
     @Transactional
     public Optional<Session> authenticate(String token) {
         if (token == null || token.isBlank()) {
@@ -127,21 +137,33 @@ public class AccountService {
         }
         Instant now = Instant.now(clock);
         return sessions.findWithUser(hash(token))
-                .filter(s -> s.getLastUsedAt().plus(SESSION_IDLE_TIMEOUT).isAfter(now))
+                .filter(s -> expiresAt(s).isAfter(now))
                 .map(s -> {
                     if (s.getLastUsedAt().plus(TOUCH_INTERVAL).isBefore(now)) {
                         s.touch(now);
                     }
                     UserAccount user = s.getUser();
-                    return new Session(token, user.getId(), user.getUsername());
+                    return new Session(token, user.getId(), user.getUsername(), expiresAt(s));
                 });
+    }
+
+    /** Deletes expired sessions every hour. */
+    @Scheduled(fixedRate = 60, timeUnit = TimeUnit.MINUTES)
+    @Transactional
+    public void purgeExpiredSessions() {
+        sessions.deleteCreatedBefore(Instant.now(clock).minus(sessionTtl));
+    }
+
+    private Instant expiresAt(AuthSession session) {
+        return session.getCreatedAt().plus(sessionTtl);
     }
 
     private Session startSession(UserAccount account, String deviceId) {
         mergeDevice(deviceId, UserIds.forAccount(account.getId()));
         String token = newToken();
-        sessions.save(new AuthSession(hash(token), account, Instant.now(clock)));
-        return new Session(token, account.getId(), account.getUsername());
+        AuthSession session = new AuthSession(hash(token), account, Instant.now(clock));
+        sessions.save(session);
+        return new Session(token, account.getId(), account.getUsername(), expiresAt(session));
     }
 
     /** Moves an anonymous device's likes and history into the account. The shared "guest" id is never merged. */

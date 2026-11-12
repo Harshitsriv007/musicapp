@@ -44,6 +44,15 @@ describe('DownloadButton', () => {
     expect(screen.getByRole('button', { name: 'Remove download of Kesariya' })).toBeInTheDocument();
   });
 
+  it('ignores live progress of downloads made by other listeners', () => {
+    const kesariya = song(1, 'Kesariya');
+    renderWith(<DownloadButton song={kesariya} />);
+
+    act(() => FakeEventSource.last!.emit('song-updated', { ...kesariya, downloadStatus: 'DOWNLOADED' }));
+
+    expect(screen.getByRole('button', { name: 'Download Kesariya' })).toBeInTheDocument();
+  });
+
   it('removes a stored download', async () => {
     const fetchMock = mockFetch();
     renderWith(<DownloadButton song={song(2, 'Chaleya', { downloadStatus: 'DOWNLOADED' })} />);

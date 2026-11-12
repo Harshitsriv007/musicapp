@@ -20,7 +20,7 @@ const FEATURES = [
 
 /** The first screen: log in or create an account. Nothing else is shown until you do. */
 export function LoginView() {
-  const { logIn, signUp, resetPassword } = useAccount();
+  const { logIn, signUp, resetPassword, sessionExpired } = useAccount();
   const [mode, setMode] = useState<Mode>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -94,6 +94,11 @@ export function LoginView() {
           </div>
           <h1>{text.title}</h1>
           <p className="auth__lead">{text.lead}</p>
+          {sessionExpired && mode === 'login' && !error && (
+            <p className="form-notice" role="status">
+              Your session has expired. Please log in again.
+            </p>
+          )}
 
           <label className="field">
             <span className="field__label">Username</span>

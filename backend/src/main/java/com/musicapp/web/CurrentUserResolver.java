@@ -29,13 +29,15 @@ public class CurrentUserResolver implements HandlerMethodArgumentResolver {
                                   NativeWebRequest request, WebDataBinderFactory binderFactory) {
         String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (authorization != null) {
-            // A client that sends a token expects its account; never silently fall back to the device.
+            // An expired or unknown token is always 401, so the client sends the listener back to login.
             return accounts.authenticate(bearerToken(authorization))
                     .map(session -> UserIds.forAccount(session.accountId()))
                     .orElseThrow(AccountException::notLoggedIn);
         }
-        String device = request.getHeader(UserIds.HEADER);
-        return UserIds.require(device == null ? UserIds.DEFAULT : device);
+        if (parameter.getParameterAnnotation(CurrentUser.class).required()) {
+            throw AccountException.loginRequired();
+        }
+        return null;
     }
 
     /** The token from {@code Authorization: Bearer <token>}, or null if the header is not a bearer token. */

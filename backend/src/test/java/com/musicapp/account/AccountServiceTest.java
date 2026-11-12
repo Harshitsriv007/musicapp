@@ -34,8 +34,9 @@ class AccountServiceTest {
     private final AuthSessionRepository sessions = mock(AuthSessionRepository.class);
     private final LikedSongRepository likes = mock(LikedSongRepository.class);
     private final PlayHistoryRepository history = mock(PlayHistoryRepository.class);
+    private static final Duration TTL = Duration.ofHours(4);
     private final AccountService service =
-            new AccountService(users, sessions, likes, history, Clock.fixed(NOW, ZoneOffset.UTC), true);
+            new AccountService(users, sessions, likes, history, Clock.fixed(NOW, ZoneOffset.UTC), true, TTL);
 
     private static UserAccount account(long id, String username, String password) {
         UserAccount account = new UserAccount(username, new BCryptPasswordEncoder().encode(password), NOW);
@@ -60,6 +61,7 @@ class AccountServiceTest {
 
         assertThat(session.username()).isEqualTo("riya");
         assertThat(session.accountId()).isEqualTo(7L);
+        assertThat(session.expiresAt()).isEqualTo(NOW.plus(TTL));
         ArgumentCaptor<AuthSession> stored = ArgumentCaptor.forClass(AuthSession.class);
         verify(sessions).save(stored.capture());
         assertThat(stored.getValue().getTokenHash()).isEqualTo(AccountService.hash(session.token())).isNotEqualTo(session.token());
@@ -119,27 +121,35 @@ class AccountServiceTest {
     }
 
     @Test
-    void authenticateAcceptsLiveSessionsOnly() {
+    void sessionsExpireFourHoursAfterLogin() {
         UserAccount riya = account(3, "riya", "secret-123");
         when(sessions.findWithUser(AccountService.hash("live")))
-                .thenReturn(Optional.of(new AuthSession("h", riya, NOW.minus(Duration.ofDays(10)))));
+                .thenReturn(Optional.of(new AuthSession("h", riya, NOW.minus(Duration.ofHours(3).plusMinutes(59)))));
         when(sessions.findWithUser(AccountService.hash("stale")))
-                .thenReturn(Optional.of(new AuthSession("h", riya, NOW.minus(AccountService.SESSION_IDLE_TIMEOUT))));
+                .thenReturn(Optional.of(new AuthSession("h", riya, NOW.minus(Duration.ofHours(4)))));
 
         assertThat(service.authenticate("live")).map(Session::username).contains("riya");
+        assertThat(service.authenticate("live")).map(Session::expiresAt).contains(NOW.plusSeconds(60));
         assertThat(service.authenticate("stale")).isEmpty();
         assertThat(service.authenticate("unknown")).isEmpty();
         assertThat(service.authenticate(null)).isEmpty();
     }
 
     @Test
-    void authenticateRefreshesLastUse() {
-        AuthSession session = new AuthSession("h", account(3, "riya", "secret-123"), NOW.minus(Duration.ofDays(2)));
+    void usingASessionDoesNotExtendIt() {
+        AuthSession session = new AuthSession("h", account(3, "riya", "secret-123"), NOW.minus(Duration.ofHours(2)));
         when(sessions.findWithUser(AccountService.hash("tok"))).thenReturn(Optional.of(session));
 
-        service.authenticate("tok");
-
+        assertThat(service.authenticate("tok")).map(Session::expiresAt).contains(NOW.plus(Duration.ofHours(2)));
         assertThat(session.getLastUsedAt()).isEqualTo(NOW);
+        assertThat(session.getCreatedAt()).isEqualTo(NOW.minus(Duration.ofHours(2)));
+    }
+
+    @Test
+    void expiredSessionsArePurged() {
+        service.purgeExpiredSessions();
+
+        verify(sessions).deleteCreatedBefore(NOW.minus(TTL));
     }
 
     @Test
@@ -165,7 +175,7 @@ class AccountServiceTest {
 
     @Test
     void resetPasswordCanBeTurnedOff() {
-        AccountService locked = new AccountService(users, sessions, likes, history, Clock.fixed(NOW, ZoneOffset.UTC), false);
+        AccountService locked = new AccountService(users, sessions, likes, history, Clock.fixed(NOW, ZoneOffset.UTC), false, TTL);
         assertThatThrownBy(() -> locked.resetPassword("riya", "new-pass-1", "d"))
                 .isInstanceOfSatisfying(AccountException.class, e -> assertThat(e.status()).isEqualTo(HttpStatus.FORBIDDEN));
         verify(users, never()).findByUsername(anyString());

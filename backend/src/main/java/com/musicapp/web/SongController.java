@@ -32,7 +32,7 @@ public class SongController {
 
     @GetMapping
     public PageResponse<SongDto> list(
-            @CurrentUser String userId,
+            @CurrentUser(required = false) String userId,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "false") boolean downloaded,
             @RequestParam(required = false) String decade,
@@ -45,14 +45,14 @@ public class SongController {
 
     @GetMapping("/new")
     public List<SongDto> newest(
-            @CurrentUser String userId,
+            @CurrentUser(required = false) String userId,
             @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
         return songService.newest(userId, limit);
     }
 
     @GetMapping("/{id}")
     public SongDto get(
-            @CurrentUser String userId,
+            @CurrentUser(required = false) String userId,
             @PathVariable Long id) {
         return songService.get(userId, id);
     }

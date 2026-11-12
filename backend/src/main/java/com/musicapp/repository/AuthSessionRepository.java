@@ -12,6 +12,11 @@ public interface AuthSessionRepository extends JpaRepository<AuthSession, String
     @Query("select s from AuthSession s join fetch s.user where s.tokenHash = :tokenHash")
     Optional<AuthSession> findWithUser(@Param("tokenHash") String tokenHash);
 
+    /** Removes sessions that have expired (they are already rejected; this just frees the rows). */
+    @Modifying
+    @Query("delete from AuthSession s where s.createdAt < :createdBefore")
+    int deleteCreatedBefore(@Param("createdBefore") java.time.Instant createdBefore);
+
     /** Logs the account out everywhere. */
     @Modifying
     @Query("delete from AuthSession s where s.user.id = :userId")

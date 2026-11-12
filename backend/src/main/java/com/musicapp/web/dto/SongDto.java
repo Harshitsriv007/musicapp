@@ -28,11 +28,17 @@ public record SongDto(
         return "/api/songs/" + songId + "/audio";
     }
 
-    public static SongDto from(Song s, boolean liked) {
-        boolean local = s.getDownloadStatus() == DownloadStatus.DOWNLOADED;
+    /**
+     * @param liked      the song is in this listener's liked songs
+     * @param downloaded the song is in this listener's Downloads; otherwise its status is shown as NONE,
+     *                   whatever other listeners did with it
+     */
+    public static SongDto from(Song s, boolean liked, boolean downloaded) {
+        DownloadStatus status = downloaded ? s.getDownloadStatus() : DownloadStatus.NONE;
+        boolean local = status == DownloadStatus.DOWNLOADED;
         return new SongDto(s.getId(), s.getTitle(), s.getArtist(), s.getAlbum(), s.getMovie(), s.getGenre(),
                 s.getImageUrl(), local ? localAudioPath(s.getId()) : s.getStreamUrl(),
                 s.getDurationSeconds(), s.getReleaseDate(), s.getSource(), s.getCreatedAt(), liked,
-                s.getDownloadStatus().name(), s.getOriginalReleaseDate());
+                status.name(), s.getOriginalReleaseDate());
     }
 }

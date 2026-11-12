@@ -1,26 +1,40 @@
 Feature: Accounts
-  Logging in shows the same liked songs and play history on every device.
+  Liked songs, play history and downloads belong to an account: the same on every device
+  the listener logs in on, and never visible to anyone else. A login lasts 4 hours.
 
   Background:
     Given the catalogue contains the songs "Tum Hi Ho, Kesariya, Chaiyya Chaiyya"
 
   Scenario: Likes and history follow the account to another device
-    When listener "phone" likes "Kesariya"
+    When "phone" signs up as "riya" with password "secret-123"
+    And listener "phone" likes "Kesariya"
     And listener "phone" plays "Tum Hi Ho"
-    And "phone" signs up as "riya" with password "secret-123"
     When "laptop" logs in as "riya" with password "secret-123"
     And listener "laptop" likes "Chaiyya Chaiyya"
     Then the liked songs of "laptop" are "Chaiyya Chaiyya, Kesariya"
     And the play history of "laptop" is "Tum Hi Ho"
     And the liked songs of "phone" are "Chaiyya Chaiyya, Kesariya"
 
-  Scenario: Logging in merges likes without duplicates
+  Scenario: Listeners never see each other's data
+    When "phone" signs up as "riya" with password "secret-123"
+    And "laptop" signs up as "aman" with password "secret-456"
+    And listener "phone" likes "Kesariya"
+    And listener "phone" plays "Tum Hi Ho"
+    Then the liked songs of "laptop" are empty
+    And the play history of "laptop" is empty
+    And "Kesariya" is shown as liked for "phone" but not for "laptop"
+
+  Scenario: Listener data needs a login
+    Then listener data of "tablet" is rejected without a login
+    And "tablet" can still browse the catalogue without logging in
+
+  Scenario: A login expires after 4 hours
     When "phone" signs up as "riya" with password "secret-123"
     And listener "phone" likes "Kesariya"
-    And listener "tablet" likes "Kesariya"
-    And listener "tablet" likes "Tum Hi Ho"
-    And "tablet" logs in as "riya" with password "secret-123"
-    Then the liked songs of "tablet" are "Tum Hi Ho, Kesariya"
+    And 4 hours pass since "phone" logged in
+    Then requests from "phone" are rejected until it logs in again
+    When "phone" logs in as "riya" with password "secret-123"
+    Then the liked songs of "phone" are "Kesariya"
 
   Scenario: Forgot password sets a new one and logs out other devices
     When "phone" signs up as "riya" with password "secret-123"

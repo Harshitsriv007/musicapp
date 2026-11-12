@@ -3,6 +3,7 @@ package com.musicapp.service;
 import com.musicapp.domain.LikedSong;
 import com.musicapp.repository.LikedSongRepository;
 import com.musicapp.repository.SongRepository;
+import com.musicapp.repository.UserDownloadRepository;
 import com.musicapp.web.dto.LikedSongDto;
 import com.musicapp.web.dto.PageResponse;
 import com.musicapp.web.dto.SongDto;
@@ -22,11 +23,13 @@ public class LikeService {
 
     private final LikedSongRepository likes;
     private final SongRepository songs;
+    private final UserDownloadRepository downloads;
     private final Clock clock;
 
-    public LikeService(LikedSongRepository likes, SongRepository songs, Clock clock) {
+    public LikeService(LikedSongRepository likes, SongRepository songs, UserDownloadRepository downloads, Clock clock) {
         this.likes = likes;
         this.songs = songs;
+        this.downloads = downloads;
         this.clock = clock;
     }
 
@@ -68,7 +71,13 @@ public class LikeService {
 
     @Transactional(readOnly = true)
     public PageResponse<LikedSongDto> list(String userId, int page, int size) {
-        return PageResponse.of(likes.findByUser(userId, PageRequest.of(page, size)),
-                list -> list.stream().map(l -> new LikedSongDto(SongDto.from(l.getSong(), true), l.getLikedAt())).toList());
+        return PageResponse.of(likes.findByUser(userId, PageRequest.of(page, size)), list -> {
+            Set<Long> downloaded = list.isEmpty() ? Set.of()
+                    : downloads.findDownloadedSongIds(userId, list.stream().map(l -> l.getSong().getId()).toList());
+            return list.stream()
+                    .map(l -> new LikedSongDto(SongDto.from(l.getSong(), true, downloaded.contains(l.getSong().getId())),
+                            l.getLikedAt()))
+                    .toList();
+        });
     }
 }

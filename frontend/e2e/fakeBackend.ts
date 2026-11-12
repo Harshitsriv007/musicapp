@@ -36,6 +36,8 @@ export const song = (id: number, title: string, artist = 'Arijit Singh', release
   downloadStatus: 'NONE',
 });
 
+const inFourHours = () => new Date(Date.now() + 4 * 3600_000).toISOString();
+
 /** Same rules as the backend: latest = last 12 months, the 50s folder also holds older songs. */
 function inDecade(releaseDate: string, key: string): boolean {
   if (key === 'latest') {
@@ -67,7 +69,7 @@ export async function fakeBackend(page: Page, initial: FakeSong[], { loggedIn = 
     await page.addInitScript(() => {
       if (!sessionStorage.getItem('e2e.seeded')) {
         sessionStorage.setItem('e2e.seeded', '1');
-        localStorage.setItem('dhun.session', JSON.stringify({ token: 'e2e-token', username: 'riya' }));
+        localStorage.setItem('dhun.session', JSON.stringify({ token: 'e2e-token', username: 'riya', expiresAt: new Date(Date.now() + 4 * 3600_000).toISOString() }));
       }
     });
   }
@@ -91,11 +93,11 @@ export async function fakeBackend(page: Page, initial: FakeSong[], { loggedIn = 
     if (method === 'POST' && (path === '/api/auth/login' || path === '/api/auth/signup')) {
       const { username, password } = JSON.parse(req.postData() ?? '{}') as { username: string; password: string };
       if (password !== 'secret-123') return json(route, { detail: 'Wrong username or password' }, 401);
-      return json(route, { token: `token-${username}`, username }, path.endsWith('signup') ? 201 : 200);
+      return json(route, { token: `token-${username}`, username, expiresAt: inFourHours() }, path.endsWith('signup') ? 201 : 200);
     }
     if (method === 'POST' && path === '/api/auth/reset-password') {
       const { username } = JSON.parse(req.postData() ?? '{}') as { username: string };
-      return json(route, { token: `token-${username}`, username });
+      return json(route, { token: `token-${username}`, username, expiresAt: inFourHours() });
     }
     if (method === 'POST' && path === '/api/auth/logout') return route.fulfill({ status: 204 });
     if (method === 'GET' && path === '/api/songs/new') return json(route, songs.map(view));

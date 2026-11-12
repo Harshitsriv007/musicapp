@@ -2,7 +2,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AccountProvider } from '../hooks/AccountContext';
-import { getSession, setSession } from '../lib/session';
+import { expireSession, getSession, setSession } from '../lib/session';
+
+const LATER = new Date(Date.now() + 4 * 3600_000).toISOString();
 import { mockFetch } from '../test/fakes';
 import { LoginView } from './LoginView';
 
@@ -20,14 +22,14 @@ const renderLogin = () =>
 
 describe('LoginView', () => {
   it('logs in', async () => {
-    const fetchMock = mockFetch({ 'POST /api/auth/login': { token: 'tok', username: 'riya' } });
+    const fetchMock = mockFetch({ 'POST /api/auth/login': { token: 'tok', username: 'riya', expiresAt: LATER } });
     renderLogin();
 
     await userEvent.type(screen.getByLabelText('Username'), 'riya');
     await userEvent.type(screen.getByLabelText('Password'), 'secret-123');
     await userEvent.click(screen.getByRole('button', { name: 'Log in' }));
 
-    expect(getSession()).toEqual({ token: 'tok', username: 'riya' });
+    expect(getSession()).toEqual({ token: 'tok', username: 'riya', expiresAt: LATER });
     expect(fetchMock.mock.calls[0][1]!.body).toBe('{"username":"riya","password":"secret-123"}');
   });
 
@@ -58,6 +60,19 @@ describe('LoginView', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Can’t reach the Dhun server');
   });
 
+  it('explains that an expired session needs a new login', async () => {
+    expireSession();
+    renderLogin();
+
+    expect(screen.getByRole('status')).toHaveTextContent('Your session has expired. Please log in again.');
+  });
+
+  it('does not talk about expiry on a fresh visit', () => {
+    renderLogin();
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
   it('can show the password', async () => {
     renderLogin();
     const password = screen.getByLabelText('Password');
@@ -67,7 +82,7 @@ describe('LoginView', () => {
   });
 
   it('resets a forgotten password and logs in', async () => {
-    const fetchMock = mockFetch({ 'POST /api/auth/reset-password': { token: 'tok2', username: 'riya' } });
+    const fetchMock = mockFetch({ 'POST /api/auth/reset-password': { token: 'tok2', username: 'riya', expiresAt: LATER } });
     renderLogin();
 
     await userEvent.click(screen.getByRole('button', { name: 'Forgot password?' }));
@@ -84,7 +99,7 @@ describe('LoginView', () => {
     await userEvent.type(screen.getByLabelText('Confirm new password'), 'new-pass-1');
     await userEvent.click(screen.getByRole('button', { name: 'Save new password' }));
 
-    expect(getSession()).toEqual({ token: 'tok2', username: 'riya' });
+    expect(getSession()).toEqual({ token: 'tok2', username: 'riya', expiresAt: LATER });
     expect(fetchMock.mock.calls[0][1]!.body).toBe('{"username":"riya","newPassword":"new-pass-1"}');
   });
 });

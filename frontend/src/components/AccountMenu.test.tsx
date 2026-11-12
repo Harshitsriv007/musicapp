@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AccountProvider } from '../hooks/AccountContext';
 import { getSession, setSession } from '../lib/session';
+
+const LATER = new Date(Date.now() + 4 * 3600_000).toISOString();
 import { mockFetch } from '../test/fakes';
 import { AccountMenu } from './AccountMenu';
 
@@ -13,7 +15,7 @@ afterEach(() => {
 
 describe('AccountMenu', () => {
   it('shows the account and logs out', async () => {
-    setSession({ token: 'tok', username: 'riya' });
+    setSession({ token: 'tok', username: 'riya', expiresAt: LATER });
     const fetchMock = mockFetch();
     const { container } = render(
       <AccountProvider>

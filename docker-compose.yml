@@ -73,6 +73,7 @@ services:
       JAMENDO_ENABLED: ${JAMENDO_ENABLED:-false}
       JAMENDO_CLIENT_ID: ${JAMENDO_CLIENT_ID:-}
       PASSWORD_RESET_ENABLED: ${PASSWORD_RESET_ENABLED:-true}
+      SESSION_TTL: ${SESSION_TTL:-4h}
     ports:
       - "8080:8080"
     depends_on:

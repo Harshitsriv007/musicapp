@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -17,10 +18,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.musicapp.account.AccountService;
+import com.musicapp.account.Session;
 import com.musicapp.service.SongNotFoundException;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +42,7 @@ class DownloadControllerTest {
     @Autowired
     MockMvc mvc;
 
-    /** Needed by the @CurrentUser resolver; unknown tokens by default. */
+    /** Needed by the @CurrentUser resolver: "tok" is a live session of account 7. */
     @MockitoBean
     AccountService accountService;
 
@@ -50,6 +54,8 @@ class DownloadControllerTest {
 
     @BeforeEach
     void storedAudio() throws Exception {
+        when(accountService.authenticate("tok"))
+                .thenReturn(Optional.of(new Session("tok", 7, "riya", Instant.parse("2026-01-01T04:00:00Z"))));
         when(downloadService.audioInfo(1L)).thenReturn(new DownloadService.AudioInfo(AUDIO.length, "audio/mpeg"));
         doAnswer(inv -> {
             long start = inv.getArgument(1);
@@ -99,10 +105,11 @@ class DownloadControllerTest {
 
     @Test
     void downloadManyQueuesSongs() throws Exception {
-        when(downloadService.request(List.of(1L, 2L)))
+        when(downloadService.request("acct_7", List.of(1L, 2L)))
                 .thenReturn(List.of(new DownloadStatusDto(1L, "PENDING"), new DownloadStatusDto(2L, "DOWNLOADED")));
 
-        mvc.perform(post("/api/downloads").contentType(MediaType.APPLICATION_JSON).content("{\"songIds\":[1,2]}"))
+        mvc.perform(post("/api/downloads").header("Authorization", "Bearer tok")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"songIds\":[1,2]}"))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$[0].downloadStatus").value("PENDING"))
                 .andExpect(jsonPath("$[1].downloadStatus").value("DOWNLOADED"));
@@ -110,13 +117,23 @@ class DownloadControllerTest {
 
     @Test
     void downloadManyRejectsEmptyList() throws Exception {
-        mvc.perform(post("/api/downloads").contentType(MediaType.APPLICATION_JSON).content("{\"songIds\":[]}"))
+        mvc.perform(post("/api/downloads").header("Authorization", "Bearer tok")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"songIds\":[]}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void removeDownload() throws Exception {
-        mvc.perform(delete("/api/songs/1/download")).andExpect(status().isNoContent());
-        verify(downloadService).remove(1L);
+        mvc.perform(delete("/api/songs/1/download").header("Authorization", "Bearer tok")).andExpect(status().isNoContent());
+        verify(downloadService).remove("acct_7", 1L);
+    }
+
+    @Test
+    void downloadsNeedALogin() throws Exception {
+        mvc.perform(post("/api/songs/1/download")).andExpect(status().isUnauthorized());
+        mvc.perform(delete("/api/songs/1/download")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/downloads").contentType(MediaType.APPLICATION_JSON).content("{\"songIds\":[1]}"))
+                .andExpect(status().isUnauthorized());
+        verifyNoInteractions(downloadService);
     }
 }

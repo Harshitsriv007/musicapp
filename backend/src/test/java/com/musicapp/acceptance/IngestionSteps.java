@@ -80,7 +80,7 @@ public class IngestionSteps {
 
     @Then("the song {string} by {string} is playable with artwork")
     public void songIsPlayable(String title, String artist) {
-        var song = api.get("/api/songs?q=" + title.replace(" ", "%20"), "guest").get("content").get(0);
+        var song = api.get("/api/songs?q=" + title.replace(" ", "%20"), null).get("content").get(0);
         assertThat(song.get("title").asText()).isEqualTo(title);
         assertThat(song.get("artist").asText()).isEqualTo(artist);
         assertThat(song.get("streamUrl").asText()).contains("/v1/tracks/").endsWith("/stream?app_name=musicapp-test");

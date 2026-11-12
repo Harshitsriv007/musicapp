@@ -1,4 +1,4 @@
-import { getSession, setSession } from '../lib/session';
+import { expireSession, getSession } from '../lib/session';
 import { getUserId } from '../lib/userId';
 import type {
   AuthResponse,
@@ -33,9 +33,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       ...(init.headers ?? {}),
     },
   });
-  // The session expired or was logged out elsewhere: fall back to this device's own (anonymous) data.
+  // The session expired or was logged out elsewhere: back to the login screen.
   if (response.status === 401 && session && getSession()?.token === session.token) {
-    setSession(null);
+    expireSession();
   }
   if (!response.ok) {
     const detail = await errorDetail(response);

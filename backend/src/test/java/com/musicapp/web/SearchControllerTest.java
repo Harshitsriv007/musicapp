@@ -6,10 +6,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.musicapp.account.AccountService;
+import com.musicapp.account.Session;
 import com.musicapp.browse.FolderDto;
 import com.musicapp.service.SearchService;
 import com.musicapp.web.dto.SearchResultDto;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -31,10 +34,12 @@ class SearchControllerTest {
 
     @Test
     void returnsGroupedResults() throws Exception {
-        when(searchService.search("riya", "brahmastra", 50)).thenReturn(new SearchResultDto("brahmastra", List.of(),
+        when(accountService.authenticate("tok"))
+                .thenReturn(Optional.of(new Session("tok", 7, "riya", Instant.parse("2026-01-01T04:00:00Z"))));
+        when(searchService.search("acct_7", "brahmastra", 50)).thenReturn(new SearchResultDto("brahmastra", List.of(),
                 List.of(), List.of(new FolderDto("Brahmastra", "Brahmastra", 2, null))));
 
-        mvc.perform(get("/api/search").param("q", "brahmastra").header("X-User-Id", "riya"))
+        mvc.perform(get("/api/search").param("q", "brahmastra").header("Authorization", "Bearer tok"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.query").value("brahmastra"))
                 .andExpect(jsonPath("$.movies[0].key").value("Brahmastra"))
