@@ -77,7 +77,8 @@ musicapp:
       enabled: ${JAMENDO_ENABLED:false}
       base-url: ${JAMENDO_BASE_URL:https://api.jamendo.com}
       client-id: ${JAMENDO_CLIENT_ID:}
-      tags: ${JAMENDO_TAGS:bollywood+indian}
+      # Any of these tags (Jamendo has no Bollywood labels; "indian"/"world" find the closest indie music).
+      tags: ${JAMENDO_TAGS:indian+bollywood+hindi+world}
   enrichment:
     # Look up each song's original release year in MusicBrainz (free) for the decade folders.
     enabled: ${ENRICHMENT_ENABLED:true}

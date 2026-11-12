@@ -50,6 +50,16 @@ public class Song {
     @Column(name = "release_date")
     private LocalDate releaseDate;
 
+    @Column(name = "share_url", length = 1024)
+    private String shareUrl;
+
+    @Column(name = "license_url", length = 1024)
+    private String licenseUrl;
+
+    /** False when the provider forbids storing the audio (Jamendo's audiodownload_allowed). */
+    @Column(name = "download_allowed", nullable = false)
+    private boolean downloadAllowed = true;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "download_status", nullable = false, length = 16)
     private DownloadStatus downloadStatus = DownloadStatus.NONE;
@@ -118,6 +128,12 @@ public class Song {
     public LocalDate getReleaseDate() { return releaseDate; }
     public void setReleaseDate(LocalDate releaseDate) { this.releaseDate = releaseDate; }
     public Instant getCreatedAt() { return createdAt; }
+    public String getShareUrl() { return shareUrl; }
+    public void setShareUrl(String shareUrl) { this.shareUrl = shareUrl; }
+    public String getLicenseUrl() { return licenseUrl; }
+    public void setLicenseUrl(String licenseUrl) { this.licenseUrl = licenseUrl; }
+    public boolean isDownloadAllowed() { return downloadAllowed; }
+    public void setDownloadAllowed(boolean downloadAllowed) { this.downloadAllowed = downloadAllowed; }
     public LocalDate getOriginalReleaseDate() { return originalReleaseDate; }
     public void setOriginalReleaseDate(LocalDate originalReleaseDate) { this.originalReleaseDate = originalReleaseDate; }
     public Instant getMetadataCheckedAt() { return metadataCheckedAt; }

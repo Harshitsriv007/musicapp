@@ -24,10 +24,14 @@ class JamendoMusicProviderTest {
         var provider = new JamendoMusicProvider(builder, TestFixtures.props("https://audius.test", List.of("x")));
         server.expect(queryParam("client_id", "cid"))
                 .andExpect(queryParam("order", "releasedate_desc"))
+                .andExpect(queryParam("fuzzytags", "bollywood"))
                 .andRespond(withSuccess("""
                         {"headers":{"status":"success"},"results":[
                           {"id":"j1","name":"Dil Se","duration":300,"artist_name":"AR","album_name":"Album",
-                           "releasedate":"2023-03-04","image":"https://img/j1.jpg","audio":"https://audio/j1.mp3"},
+                           "releasedate":"2023-03-04","image":"https://img/j1.jpg","audio":"https://audio/j1.mp3",
+                           "shareurl":"https://www.jamendo.com/track/j1",
+                           "license_ccurl":"http://creativecommons.org/licenses/by-nc-sa/3.0/",
+                           "audiodownload_allowed":false},
                           {"id":"j2","name":"No audio","audio":""}
                         ]}
                         """, MediaType.APPLICATION_JSON));
@@ -40,6 +44,9 @@ class JamendoMusicProviderTest {
             assertThat(s.album()).isEqualTo("Album");
             assertThat(s.streamUrl()).isEqualTo("https://audio/j1.mp3");
             assertThat(s.releaseDate()).isEqualTo(LocalDate.of(2023, 3, 4));
+            assertThat(s.shareUrl()).isEqualTo("https://www.jamendo.com/track/j1");
+            assertThat(s.licenseUrl()).isEqualTo("http://creativecommons.org/licenses/by-nc-sa/3.0/");
+            assertThat(s.downloadAllowed()).isFalse();
         });
         server.verify();
     }

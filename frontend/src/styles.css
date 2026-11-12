@@ -227,6 +227,8 @@ a { color: inherit; }
 .song-row__title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; }
 .song-row__title-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .song-row__sub { color: var(--text-dim); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.song-row__credit { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.song-row__credit:hover { color: var(--text); }
 .song-row__duration { color: var(--text-dim); font-size: 13px; font-variant-numeric: tabular-nums; min-width: 40px; text-align: right; }
 
 .artwork { display: block; border-radius: 8px; object-fit: cover; background: var(--bg-elev-2); flex: none; }

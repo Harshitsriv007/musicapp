@@ -11,7 +11,11 @@ import org.springframework.web.client.RestClient;
 
 /**
  * Jamendo (https://developer.jamendo.com) – Creative Commons licensed music. Needs a free
- * client id; enable with MUSICAPP_PROVIDERS_JAMENDO_ENABLED=true and JAMENDO_CLIENT_ID.
+ * client id; enable with JAMENDO_ENABLED=true and JAMENDO_CLIENT_ID.
+ *
+ * <p>API terms: credit the artist and link back to the track on Jamendo (shareUrl), show its
+ * licence, and only store audio when {@code audiodownload_allowed} is true. Jamendo is indie
+ * music only – no Bollywood labels – and free for non-commercial use only.
  */
 @Component
 @ConditionalOnProperty(prefix = "musicapp.providers.jamendo", name = "enabled", havingValue = "true")
@@ -47,7 +51,7 @@ public class JamendoMusicProvider implements MusicProvider {
                         .queryParam("client_id", clientId)
                         .queryParam("format", "json")
                         .queryParam("limit", limit)
-                        .queryParam("tags", tags)
+                        .queryParam("fuzzytags", tags)
                         .queryParam("order", "releasedate_desc")
                         .queryParam("audioformat", "mp32")
                         .build())
@@ -71,7 +75,10 @@ public class JamendoMusicProvider implements MusicProvider {
                         t.image(),
                         t.audio(),
                         t.duration(),
-                        ProviderSupport.parseDate(t.releaseDate())))
+                        ProviderSupport.parseDate(t.releaseDate()),
+                        t.shareUrl(),
+                        t.licenseUrl(),
+                        Boolean.TRUE.equals(t.downloadAllowed())))
                 .toList();
     }
 
@@ -90,5 +97,8 @@ public class JamendoMusicProvider implements MusicProvider {
             @JsonProperty("album_name") String albumName,
             @JsonProperty("releasedate") String releaseDate,
             String image,
-            String audio) {}
+            String audio,
+            @JsonProperty("shareurl") String shareUrl,
+            @JsonProperty("license_ccurl") String licenseUrl,
+            @JsonProperty("audiodownload_allowed") Boolean downloadAllowed) {}
 }

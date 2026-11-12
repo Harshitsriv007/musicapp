@@ -74,6 +74,34 @@ export function SongList({ songs, loading, error, empty, meta, badge, rowKey }: 
                 </span>
                 <span className="song-row__sub">
                   {song.artist ?? 'Unknown artist'}
+                  {song.shareUrl && (
+                    <>
+                      {' · '}
+                      <a
+                        href={song.shareUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="song-row__credit"
+                        title={song.licenseUrl ? `Licence: ${song.licenseUrl}` : undefined}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      >
+                        {song.source === 'jamendo' ? 'Jamendo' : 'Source'}
+                      </a>
+                      {song.licenseUrl && (
+                        <a
+                          href={song.licenseUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="song-row__credit"
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                        >
+                          {' '}(licence)
+                        </a>
+                      )}
+                    </>
+                  )}
                   {(() => {
                     const extra = meta?.(song, i);
                     return extra != null && extra !== '' ? <> · {extra}</> : null;

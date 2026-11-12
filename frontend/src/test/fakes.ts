@@ -44,6 +44,9 @@ export function song(id: number, title: string, extra: Partial<Song> = {}): Song
     addedAt: null,
     liked: false,
     downloadStatus: 'NONE',
+    shareUrl: null,
+    licenseUrl: null,
+    downloadAllowed: true,
     ...extra,
   };
 }
