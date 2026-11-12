@@ -7,7 +7,7 @@ COPY src ./src
 RUN mvn -q -B package -DskipTests
 
 # ---- run ----
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:24-jre
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 1001 app
