@@ -31,7 +31,8 @@ class AudiusMusicProviderTest {
                "extra_unknown_field":123},
               {"id":"DEL1","title":"Deleted","is_delete":true},
               {"id":"GATE1","title":"Premium only","is_stream_gated":true},
-              {"id":"OLD1","title":"No release date","created_at":"2020-01-02T03:04:05Z","user":{"name":"X"}}
+              {"id":"OLD1","title":"No release date","genre":"Bollywood","created_at":"2020-01-02T03:04:05Z","user":{"name":"X"}},
+              {"id":"OFF1","title":"Surah Fatiha","genre":"Spoken","user":{"name":"Qari"}}
             ]}
             """;
 
@@ -67,6 +68,24 @@ class AudiusMusicProviderTest {
         assertThat(kesariya.releaseDate()).isEqualTo(LocalDate.of(2022, 7, 17));
         // falls back to created_at when release_date is missing
         assertThat(songs.get(1).releaseDate()).isEqualTo(LocalDate.of(2020, 1, 2));
+        server.verify();
+    }
+
+    @Test
+    void keepsOnlyTracksThatMentionTheSearchedNameOrBollywood() {
+        RestClient.Builder builder = RestClient.builder();
+        server = MockRestServiceServer.bindTo(builder).build();
+        provider = new AudiusMusicProvider(builder, TestFixtures.props("https://audius.test", List.of("shreya ghoshal")));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("query=shreya"))).andRespond(withSuccess("""
+                {"data":[
+                  {"id":"1","title":"Tu Thodi Der - Shreya Ghoshal"},
+                  {"id":"2","title":"Sunn Raha Hai","user":{"name":"SHREYA fan"}},
+                  {"id":"3","title":"Teri Meri","tags":"hindi,romantic"},
+                  {"id":"4","title":"Chill beat","genre":"Lo-Fi","user":{"name":"dj x"}}
+                ]}
+                """, MediaType.APPLICATION_JSON));
+
+        assertThat(provider.fetchLatest()).extracting(SongEvent::externalId).containsExactly("1", "2", "3");
         server.verify();
     }
 

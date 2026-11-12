@@ -59,7 +59,7 @@ musicapp:
     # Every 15 minutes. Set INGESTION_CRON=- to disable.
     cron: ${INGESTION_CRON:0 */15 * * * *}
     run-on-startup: ${INGESTION_RUN_ON_STARTUP:true}
-    queries: ${INGESTION_QUERIES:bollywood,hindi songs,arijit singh,bollywood romantic,punjabi}
+    queries: ${INGESTION_QUERIES:bollywood songs,bollywood hits,hindi songs,bollywood romantic,90s bollywood,arijit singh,shreya ghoshal,atif aslam,jubin nautiyal,sonu nigam,kishore kumar,lata mangeshkar,neha kakkar,pritam}
     limit-per-query: ${INGESTION_LIMIT_PER_QUERY:25}
   kafka:
     songs-topic: ${SONGS_TOPIC:music.songs.discovered}

@@ -69,7 +69,7 @@ services:
       DOWNLOAD_MAX_BYTES: ${DOWNLOAD_MAX_BYTES:-104857600}
       ENRICHMENT_ENABLED: ${ENRICHMENT_ENABLED:-true}
       MUSICBRAINZ_USER_AGENT: ${MUSICBRAINZ_USER_AGENT:-DhunMusicApp/1.0 ( self-hosted )}
-      INGESTION_QUERIES: ${INGESTION_QUERIES:-bollywood,hindi songs,arijit singh,bollywood romantic,punjabi}
+      INGESTION_QUERIES: ${INGESTION_QUERIES:-bollywood songs,bollywood hits,hindi songs,bollywood romantic,90s bollywood,arijit singh,shreya ghoshal,atif aslam,jubin nautiyal,sonu nigam,kishore kumar,lata mangeshkar,neha kakkar,pritam}
       JAMENDO_ENABLED: ${JAMENDO_ENABLED:-false}
       JAMENDO_CLIENT_ID: ${JAMENDO_CLIENT_ID:-}
       JAMENDO_TAGS: ${JAMENDO_TAGS:-indian+bollywood+hindi}
