@@ -59,7 +59,7 @@ musicapp:
     # Every 15 minutes. Set INGESTION_CRON=- to disable.
     cron: ${INGESTION_CRON:0 */15 * * * *}
     run-on-startup: ${INGESTION_RUN_ON_STARTUP:true}
-    queries: ${INGESTION_QUERIES:bollywood,hindi songs,arijit singh,bollywood romantic,punjabi}
+    queries: ${INGESTION_QUERIES:bollywood songs,bollywood hits,hindi songs,bollywood romantic,90s bollywood,arijit singh,shreya ghoshal,atif aslam,jubin nautiyal,sonu nigam,kishore kumar,lata mangeshkar,neha kakkar,pritam}
     limit-per-query: ${INGESTION_LIMIT_PER_QUERY:25}
   kafka:
     songs-topic: ${SONGS_TOPIC:music.songs.discovered}
@@ -77,7 +77,14 @@ musicapp:
       enabled: ${JAMENDO_ENABLED:false}
       base-url: ${JAMENDO_BASE_URL:https://api.jamendo.com}
       client-id: ${JAMENDO_CLIENT_ID:}
-      tags: ${JAMENDO_TAGS:bollywood+indian}
+      # A track matching any of these tags is fetched (Jamendo is indie music: no label Bollywood hits).
+      tags: ${JAMENDO_TAGS:indian+bollywood+hindi}
+      # Also searched by name on every full sync.
+      searches: ${JAMENDO_SEARCHES:bollywood,hindi,punjabi}
+      # Full sync = every matching track (most popular first), up to max-tracks per tag list / search.
+      max-tracks: ${JAMENDO_MAX_TRACKS:2000}
+      full-sync-interval: ${JAMENDO_FULL_SYNC_INTERVAL:6h}
+      request-interval: ${JAMENDO_REQUEST_INTERVAL:1s}
   enrichment:
     # Look up each song's original release year in MusicBrainz (free) for the decade folders.
     enabled: ${ENRICHMENT_ENABLED:true}

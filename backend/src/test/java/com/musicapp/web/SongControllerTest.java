@@ -29,7 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class SongControllerTest {
 
     private static final SongDto KESARIYA =
-            new SongDto(1L, "Kesariya", "Arijit Singh", null, null, "Bollywood", "img", "stream", 268, null, "audius", null, true, "NONE", null);
+            new SongDto(1L, "Kesariya", "Arijit Singh", null, null, "Bollywood", "img", "stream", 268, null, "audius", null, true, "NONE", null, null, null, true);
 
     @Autowired
     MockMvc mvc;

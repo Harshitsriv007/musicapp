@@ -16,7 +16,7 @@ public final class TestFixtures {
                 new AppProperties.Kafka("music.songs.discovered", "music.songs.download-requested", 1),
                 new AppProperties.Providers(
                         new AppProperties.Audius(true, audiusUrl, "testapp"),
-                        new AppProperties.Jamendo(true, "https://jamendo.test", "cid", "bollywood")),
+                        AppProperties.Jamendo.of(true, "https://jamendo.test", "cid", "bollywood")),
                 new AppProperties.Cors(List.of("*")),
                 new AppProperties.Download(10_000),
                 new AppProperties.Enrichment(true, "https://mb.test", "DhunTest/1.0", 30, java.time.Duration.ZERO));

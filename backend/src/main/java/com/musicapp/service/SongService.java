@@ -58,6 +58,9 @@ public class SongService {
         song.setStreamUrl(e.streamUrl());
         song.setDurationSeconds(e.durationSeconds());
         song.setReleaseDate(e.releaseDate());
+        song.setShareUrl(e.shareUrl());
+        song.setLicenseUrl(e.licenseUrl());
+        song.setDownloadAllowed(!Boolean.FALSE.equals(e.downloadAllowed()));
         try {
             Song saved = songs.saveAndFlush(song);
             return existing.isPresent() ? Optional.empty() : Optional.of(SongDto.from(saved, false, false));

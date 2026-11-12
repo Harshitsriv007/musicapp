@@ -74,6 +74,11 @@ public class DownloadService {
         if (found.isEmpty()) {
             throw new SongNotFoundException(ids.getFirst());
         }
+        // The provider's terms forbid storing these (e.g. Jamendo tracks without audiodownload_allowed).
+        found = found.stream().filter(Song::isDownloadAllowed).toList();
+        if (found.isEmpty()) {
+            throw new IllegalArgumentException("The music provider does not allow downloading this song");
+        }
         Set<Long> already = downloads.findDownloadedSongIds(userId, found.stream().map(Song::getId).toList());
         Instant now = Instant.now(clock);
         downloads.saveAll(found.stream()

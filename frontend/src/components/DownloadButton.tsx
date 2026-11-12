@@ -5,6 +5,8 @@ import { DownloadedIcon, DownloadIcon } from './Icons';
 export function DownloadButton({ song, size = 20 }: { song: Song; size?: number }) {
   const { statusOf, download, remove } = useDownloads();
   const status = statusOf(song);
+  // The provider's terms (e.g. Jamendo) forbid storing this track.
+  if (song.downloadAllowed === false && status === 'NONE') return null;
 
   if (status === 'PENDING' || status === 'DOWNLOADING') {
     return (
@@ -49,7 +51,7 @@ export function DownloadButton({ song, size = 20 }: { song: Song; size?: number 
 /** "Download all" for a list of songs (Liked, All songs). */
 export function DownloadAllButton({ songs }: { songs: Song[] }) {
   const { statusOf, download } = useDownloads();
-  const remaining = songs.filter((s) => ['NONE', 'FAILED'].includes(statusOf(s)));
+  const remaining = songs.filter((s) => s.downloadAllowed !== false && ['NONE', 'FAILED'].includes(statusOf(s)));
   const busy = songs.some((s) => ['PENDING', 'DOWNLOADING'].includes(statusOf(s)));
   if (songs.length === 0) return null;
   return (

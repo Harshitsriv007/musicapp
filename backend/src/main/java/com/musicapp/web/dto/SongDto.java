@@ -21,7 +21,12 @@ public record SongDto(
         boolean liked,
         String downloadStatus,
         /** When the song first came out (MusicBrainz), if known; releaseDate is the upload date. */
-        LocalDate originalReleaseDate) {
+        LocalDate originalReleaseDate,
+        /** Provider page to credit and link back to, if any. */
+        String shareUrl,
+        String licenseUrl,
+        /** False when the provider forbids storing the audio: no download button. */
+        boolean downloadAllowed) {
 
     /** Downloaded songs are streamed from our own database instead of the external API. */
     public static String localAudioPath(Long songId) {
@@ -39,6 +44,7 @@ public record SongDto(
         return new SongDto(s.getId(), s.getTitle(), s.getArtist(), s.getAlbum(), s.getMovie(), s.getGenre(),
                 s.getImageUrl(), local ? localAudioPath(s.getId()) : s.getStreamUrl(),
                 s.getDurationSeconds(), s.getReleaseDate(), s.getSource(), s.getCreatedAt(), liked,
-                status.name(), s.getOriginalReleaseDate());
+                status.name(), s.getOriginalReleaseDate(), s.getShareUrl(), s.getLicenseUrl(),
+                s.isDownloadAllowed());
     }
 }

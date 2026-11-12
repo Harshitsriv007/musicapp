@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -57,8 +58,12 @@ public class AudiusMusicProvider implements MusicProvider {
             if (response == null || response.data() == null) {
                 continue;
             }
+            Set<String> keywords = BollywoodFilter.keywordsFor(query);
             response.data().stream()
                     .filter(AudiusTrack::isPlayable)
+                    // Audius search is fuzzy: "a r rahman" also returns unrelated uploads.
+                    .filter(t -> BollywoodFilter.mentionsAny(keywords,
+                            t.title(), t.user() == null ? null : t.user().name(), t.genre(), t.tags(), t.albumName()))
                     .map(this::toEvent)
                     .forEach(songs::add);
         }
@@ -97,6 +102,7 @@ public class AudiusMusicProvider implements MusicProvider {
             String id,
             String title,
             String genre,
+            String tags,
             Integer duration,
             @JsonProperty("release_date") String releaseDate,
             @JsonProperty("created_at") String createdAt,

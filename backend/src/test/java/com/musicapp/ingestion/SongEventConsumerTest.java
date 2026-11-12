@@ -23,7 +23,7 @@ class SongEventConsumerTest {
 
     @Test
     void broadcastsNewlyCreatedSongs() {
-        SongDto dto = new SongDto(1L, "Kesariya", "Arijit", null, null, null, null, "s", 1, null, "audius", null, false, "NONE", null);
+        SongDto dto = new SongDto(1L, "Kesariya", "Arijit", null, null, null, null, "s", 1, null, "audius", null, false, "NONE", null, null, null, true);
         when(songService.upsert(any())).thenReturn(Optional.of(dto));
 
         consumer.onSongEvent(event("1", "Kesariya"));

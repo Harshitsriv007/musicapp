@@ -29,6 +29,13 @@ afterEach(() => vi.unstubAllGlobals());
 const renderWith = (ui: React.ReactNode) => render(<DownloadsProvider>{ui}</DownloadsProvider>);
 
 describe('DownloadButton', () => {
+  it('is hidden when the provider forbids downloading the song', () => {
+    mockFetch({});
+    renderWith(<DownloadButton song={song(1, 'Locked', { downloadAllowed: false })} />);
+
+    expect(screen.queryByRole('button', { name: 'Download Locked' })).not.toBeInTheDocument();
+  });
+
   it('queues a download and follows live progress until downloaded', async () => {
     const fetchMock = mockFetch({ 'POST /api/downloads': [{ songId: 1, downloadStatus: 'PENDING' }] });
     const kesariya = song(1, 'Kesariya');

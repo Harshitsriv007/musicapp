@@ -96,6 +96,28 @@ class DownloadServiceTest {
     }
 
     @Test
+    void requestSkipsSongsTheProviderDoesNotLetUsStore() {
+        Song locked = song(2, "Locked");
+        locked.setDownloadAllowed(false);
+        when(songs.findAllById(List.of(1L, 2L))).thenReturn(List.of(kesariya, locked));
+
+        var statuses = service.request("acct_1", List.of(1L, 2L));
+
+        assertThat(statuses).containsExactly(new DownloadStatusDto(1L, "PENDING"));
+        verify(producer, never()).publish(2L);
+    }
+
+    @Test
+    void requestForOnlyNonDownloadableSongsIsRejected() {
+        Song locked = song(2, "Locked");
+        locked.setDownloadAllowed(false);
+        when(songs.findAllById(List.of(2L))).thenReturn(List.of(locked));
+
+        assertThatThrownBy(() -> service.request("acct_1", List.of(2L))).isInstanceOf(IllegalArgumentException.class);
+        verify(downloads, never()).saveAll(any());
+    }
+
+    @Test
     void requestForUnknownSongsIs404() {
         when(songs.findAllById(any())).thenReturn(List.of());
 
